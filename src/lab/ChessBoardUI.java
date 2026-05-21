@@ -152,6 +152,7 @@ public class ChessBoardUI extends JFrame {
                 endSquare.setPiece(piece);
                 startSquare.setPiece(null);
                 gameController.switchTurn();
+                piece.setMoved(true);
             }
         }
 

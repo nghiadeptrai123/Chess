@@ -16,7 +16,7 @@ public class Pawn extends Piece {
         // Normal move
         if (dy == 0 && dx == direction && end.getPiece() == null) return true;
         // Capture diagonally
-        if (dy == 1 && dx == direction && end.getPiece().isWhite() != this.isWhite()) return true;
+        if (dy == 1 && dx == direction && end.getPiece() != null && end.getPiece().isWhite() != this.isWhite()) return true;
         return false;
     }
 }

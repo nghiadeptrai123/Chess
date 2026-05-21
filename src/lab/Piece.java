@@ -11,6 +11,10 @@ public abstract class Piece {
 	}
 	public boolean isMoved() {
 		return isMoved;
+		// identify if that piece have at least 1 move or not
+	}
+	public void setMoved(boolean moved){
+		this.isMoved = moved; // setMoved after a succesfully moved.
 	}
 	public abstract boolean isValidMove(Board board, Square start, Square end);
 }
