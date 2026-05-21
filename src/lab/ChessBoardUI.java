@@ -148,12 +148,28 @@ public class ChessBoardUI extends JFrame {
             if (piece != null
                     && gameController.isCorrectTurn(piece)
                     && piece.isValidMove(board, startSquare, endSquare)) {
-                // Snap the piece to the new square
+                //check if the move leaves king in check
+                if(board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())){
+                JOptionPane.showMessageDialog(this, "Illegal Move: Check Alert!!!");
+                // check position alert
+                }else{
                 endSquare.setPiece(piece);
                 startSquare.setPiece(null);
                 gameController.switchTurn();
                 piece.setMoved(true);
+
+                boolean nextPlayeriswhite = gameController.isWhiteTurn;
+
+                if (board.isCheckmate(nextPlayeriswhite)){
+                    String winner = nextPlayeriswhite ? "Black" : "White";
+                    JOptionPane.showMessageDialog(this, "Checkmate! " + winner + " wins!");
+                } else if (board.isStalemate(nextPlayeriswhite)){
+                    JOptionPane.showMessageDialog(this, "Stalemate! This game is a draw.");
+                } else if (board.isChecked(nextPlayeriswhite)){
+                    JOptionPane.showMessageDialog(this, (nextPlayeriswhite ? "White" : "Black") + " King is in Check!");
+                }
             }
+        }
         }
 
         // Reset drag state

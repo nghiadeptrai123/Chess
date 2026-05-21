@@ -12,7 +12,11 @@ public class Pawn extends Piece {
         if (end.getPiece() != null && end.getPiece().isWhite() == this.isWhite()) {
             return false;
         }
-        if(dy == 0 && dx == direction * 2 && !this.isMoved() && end.getPiece() == null) return true;
+        /* updated logic for pawn going foward 2 step. Inorder to go 2 step, we have to
+        ensure that this is the first time that pawn move and there is no blocking between start and end position 
+        */
+        Square intermediateSquare = board.getSquare(start.getRow() + direction, start.getCol());
+        if(dy == 0 && dx == direction * 2 && !this.isMoved() && intermediateSquare.getPiece() == null && end.getPiece() == null) return true;
         // Normal move
         if (dy == 0 && dx == direction && end.getPiece() == null) return true;
         // Capture diagonally
