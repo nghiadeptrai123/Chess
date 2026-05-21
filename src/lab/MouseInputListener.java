@@ -51,4 +51,11 @@ public class MouseInputListener extends MouseAdapter {
         // tryMove validates turn, legality, then snaps the piece
         ui.tryMove(row, col);
     }
+    @Override
+public void mouseMoved(MouseEvent e) {
+    int row = ui.pixelToRow(e.getY());
+    int col = ui.pixelToCol(e.getX());
+    
+    ui.handleMouseHover(row, col);
+}
 }

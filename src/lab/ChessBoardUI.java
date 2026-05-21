@@ -17,6 +17,9 @@ public class ChessBoardUI extends JFrame {
     private int dragFromCol = -1;
     private int dragToRow   = -1;
     private int dragToCol   = -1;
+    
+    // Game state
+    private boolean gameOver = false;
 
     public ChessBoardUI(Board board, GameController gameController) {
         this.board = board;
@@ -50,8 +53,39 @@ public class ChessBoardUI extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             drawBoard(g);
+            drawHighlights(g);// highlight the possible move
             drawPieces(g);
         }
+
+        /*
+        updateded:  highlighting possible move
+        */
+        private void drawHighlights(Graphics g){
+        // check if a piece is currently selected/dragged
+        if (dragFromRow != -1 && dragFromCol != -1){
+            Square startSquare = board.getSquare(dragFromRow, dragFromCol);
+            Piece piece = startSquare.getPiece();
+
+            if (piece != null && gameController.isCorrectTurn(piece)){
+                g.setColor(new Color(50,150,50,150));
+                int circleSize = 20;
+                 int offset = (TILE_SIZE - circleSize) / 2; // Centers the circle
+                 // traverse all table to find all valid moves.
+                for (int i = 0 ; i < 8 ;++i){
+                    for (int j = 0 ; j < 8 ; ++j){
+                        Square endSquare = board.getSquare(i, j);
+                        if (piece.isValidMove(board, startSquare, endSquare)){
+                            if(!board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())){
+                                // that move will not cause check -> a possible move
+                                g.fillOval(j * TILE_SIZE + offset, i * TILE_SIZE + offset, circleSize, circleSize);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        }
+
 
         /** Draw the 8x8 alternating light/dark squares. */
         private void drawBoard(Graphics g) {
@@ -127,6 +161,7 @@ public class ChessBoardUI extends JFrame {
      * Records the source square and highlights it.
      */
     public void setDragFrom(int row, int col) {
+        if (gameOver) return;
         dragFromRow = row;
         dragFromCol = col;
         boardPanel.repaint();
@@ -137,9 +172,16 @@ public class ChessBoardUI extends JFrame {
      * Attempts the move: validates turn & move legality, then snaps the piece.
      */
     public void tryMove(int toRow, int toCol) {
+        if (gameOver) return;
         dragToRow = toRow;
         dragToCol = toCol;
-        
+        if (dragFromRow == toRow && dragFromCol == toCol){
+            // updated: reject moving to the same destination , reset to the initial state
+            dragFromRow = -1;
+            dragFromCol = -1;
+            boardPanel.repaint();
+            return;
+        }
         if (inBounds(dragFromRow, dragFromCol) && inBounds(dragToRow, dragToCol)) {
             Square startSquare = board.getSquare(dragFromRow, dragFromCol);
             Square endSquare = board.getSquare(dragToRow, dragToCol);
@@ -155,16 +197,46 @@ public class ChessBoardUI extends JFrame {
                 }else{
                 endSquare.setPiece(piece);
                 startSquare.setPiece(null);
-                gameController.switchTurn();
                 piece.setMoved(true);
+                // implementing Pawn Promotion
+                if (piece instanceof Pawn){
+                    // white promtoe at row 7, black promote at row 0
+                    int promotionRow = piece.isWhite() ? 7:0;
+                    if (dragToRow == promotionRow){
+                        // go to promtionRow
+                        String[] options = {"Queen","Rock","Bishop","Knight"};
+                        int choice = JOptionPane.showOptionDialog(this,"Choose a piece to promote to:","Pawn Promotion",JOptionPane.DEFAULT_OPTION,  JOptionPane.QUESTION_MESSAGE,null, options, options[0]); // Default to Queen
+                        Piece promotedPiece;
+                        switch(choice){
+                            case 1: 
+                                promotedPiece = new Rook(piece.isWhite()); 
+                                break;
+                            case 2:
+                                promotedPiece = new Bishop(piece.isWhite()); 
+                                break;
+                            case 3:
+                                promotedPiece = new Knight(piece.isWhite()); 
+                                break;
+                            default: //queen by default or 0
+                                promotedPiece = new Queen(piece.isWhite()); 
+                                break;
+                        }
+                        // upgrade pawn to -> promoteedPiece (choice)
+                        endSquare.setPiece(promotedPiece);
+                 }
+                }
+                gameController.switchTurn();
+                
 
                 boolean nextPlayeriswhite = gameController.isWhiteTurn;
 
                 if (board.isCheckmate(nextPlayeriswhite)){
                     String winner = nextPlayeriswhite ? "Black" : "White";
                     JOptionPane.showMessageDialog(this, "Checkmate! " + winner + " wins!");
+                    gameOver = true;
                 } else if (board.isStalemate(nextPlayeriswhite)){
                     JOptionPane.showMessageDialog(this, "Stalemate! This game is a draw.");
+                    gameOver = true;
                 } else if (board.isChecked(nextPlayeriswhite)){
                     JOptionPane.showMessageDialog(this, (nextPlayeriswhite ? "White" : "Black") + " King is in Check!");
                 }
@@ -177,6 +249,21 @@ public class ChessBoardUI extends JFrame {
         dragFromCol = -1;
         boardPanel.repaint();
     }
+
+    public void handleMouseHover(int row, int col) {
+    if (inBounds(row, col)) {
+        Piece piece = board.getSquare(row, col).getPiece();
+        
+        // If there is a piece, and it belongs to the player whose turn it is:
+        if (piece != null && gameController.isCorrectTurn(piece)) {
+            // Change the mouse cursor to a Hand pointer
+            boardPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        } else {
+            // Otherwise, keep it as the default arrow
+            boardPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        }
+    }
+}
 
     /** Force a visual refresh (called on mouse-drag for smooth feedback). */
     public void refresh() {
