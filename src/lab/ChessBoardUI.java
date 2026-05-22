@@ -26,6 +26,10 @@ public class ChessBoardUI extends JFrame {
     
     // Game state
     private boolean gameOver = false;
+    // update -> flag to block human input and repaints while the bot is calculating
+    private boolean botThinking = false;
+    // update -> frozen snapshot of piece positions taken before the bot starts calculating
+    private Piece[][] pieceSnapshot = new Piece[8][8];
 
     // Piece images: key = "White King", "Black Pawn", etc.
     private Map<String, BufferedImage> pieceImages = new HashMap<>();
@@ -48,7 +52,34 @@ public class ChessBoardUI extends JFrame {
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+
+   
+    // by default, bot will be white, first move
+    if (gameController.isSinglePlayer && gameController.isWhiteTurn) {
+            ChessBot bot = new BeginnerBot();
+            takeBoardSnapshot(); // update -> freeze the board visually before bot starts
+            botThinking = true; // update -> lock input while bot calculates opening move
+            // Hire a background worker to think
+            new Thread(() -> {
+                Move openingMove = bot.getBestMove(board, true); // true = White
+                // update -> artificial delay so the bot move doesn't appear instantly
+                try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                // Hand the result back to the UI worker
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    executeBotMove(openingMove);
+                });
+            }).start();
+        }
     }
+    
+
+
+
+
+
+
+
+
 
     // ---------------------------------------------------------------
     //  Inner panel — all painting happens here
@@ -63,8 +94,14 @@ public class ChessBoardUI extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             drawBoard(g);
-            drawHighlights(g);// highlight the possible move
-            drawPieces(g);
+            if (botThinking) {
+                // update -> draw from the frozen snapshot so the board stays visible
+                // and piece flicker from willMoveResultInCheck is impossible
+                drawPiecesFromSnapshot(g);
+            } else {
+                drawHighlights(g);// highlight the possible move
+                drawPieces(g);
+            }
         }
 
         /*
@@ -87,7 +124,16 @@ public class ChessBoardUI extends JFrame {
                         if (piece.isValidMove(board, startSquare, endSquare)){
                             if(!board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())){
                                 // that move will not cause check -> a possible move
+                                if(endSquare.getPiece()==null){
                                 g.fillOval(j * TILE_SIZE + offset, i * TILE_SIZE + offset, circleSize, circleSize);
+                                }else{
+                                    // update vong tron do cho PNG che o mau xanh problem
+                                    Graphics2D g2 = (Graphics2D) g;
+                                    g2.setColor(new Color(200, 50, 50, 150)); // semi-transparent red
+                                    g2.setStroke(new BasicStroke(4)); // 4 pixel thick border
+                                    g2.drawOval(j * TILE_SIZE + 4, i * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                                    g2.setColor(new Color(50, 150, 50, 150)); // reset back to green
+                                }
                             }
                         }
                     }
@@ -148,6 +194,41 @@ public class ChessBoardUI extends JFrame {
             }
         }
 
+        // update -> draws pieces from the frozen snapshot instead of the live board
+        // used while the bot is calculating to prevent flicker from mid-simulation mutations
+        private void drawPiecesFromSnapshot(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int padding = 6; // px gap from tile edge
+            int imgSize = TILE_SIZE - padding * 2;
+
+            for (int row = 0; row < BOARD_SIZE; row++) {
+                for (int col = 0; col < BOARD_SIZE; col++) {
+                    Piece piece = pieceSnapshot[row][col]; // read from snapshot, not live board
+                    if (piece != null) {
+                        String key = getPieceImageKey(piece);
+                        BufferedImage img = pieceImages.get(key);
+                        if (img != null) {
+                            int x = col * TILE_SIZE + padding;
+                            int y = row * TILE_SIZE + padding;
+                            g2.drawImage(img, x, y, imgSize, imgSize, null);
+                        } else {
+                            // Fallback: draw text if image missing
+                            g.setFont(new Font("SansSerif", Font.BOLD, 12));
+                            String label = (piece.isWhite() ? "W" : "B") + "-" + piece.getClass().getSimpleName();
+                            FontMetrics fm = g.getFontMetrics();
+                            int tx = col * TILE_SIZE + (TILE_SIZE - fm.stringWidth(label)) / 2;
+                            int ty = row * TILE_SIZE + (TILE_SIZE + fm.getAscent()) / 2 - 2;
+                            g.setColor(piece.isWhite() ? Color.WHITE : Color.BLACK);
+                            g.drawString(label, tx, ty);
+                        }
+                    }
+                }
+            }
+        }
+
         // Returns the map key for a piece, e.g. "White King" or "Black Pawn"
         private String getPieceImageKey(Piece piece) {
             String color = piece.isWhite() ? "White" : "Black";
@@ -177,6 +258,7 @@ public class ChessBoardUI extends JFrame {
      */
     public void setDragFrom(int row, int col) {
         if (gameOver) return;
+        if (botThinking) return; // update -> block human input while bot is calculating
         dragFromRow = row;
         dragFromCol = col;
         boardPanel.repaint();
@@ -186,8 +268,11 @@ public class ChessBoardUI extends JFrame {
      * Called by MouseInputListener when the user releases on a square.
      * Attempts the move: validates turn & move legality, then snaps the piece.
      */
+
+    // this is human move
     public void tryMove(int toRow, int toCol) {
         if (gameOver) return;
+        if (botThinking) return; // update -> block human input while bot is calculating
         dragToRow = toRow;
         dragToCol = toCol;
         if (dragFromRow == toRow && dragFromCol == toCol){
@@ -209,6 +294,11 @@ public class ChessBoardUI extends JFrame {
                 if(board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())){
                 JOptionPane.showMessageDialog(this, "Illegal Move: Check Alert!!!");
                 // check position alert
+                // update -> return early so the bot is not triggered after an illegal human move
+                dragFromRow = -1;
+                dragFromCol = -1;
+                boardPanel.repaint();
+                return;
                 }else{
                 endSquare.setPiece(piece);
                 startSquare.setPiece(null);
@@ -273,7 +363,20 @@ public class ChessBoardUI extends JFrame {
             }
         }
         }
-
+                // --- NEW: Trigger the Bot's response ---
+        if (gameController.isSinglePlayer && gameController.isWhiteTurn && !gameOver) {
+            ChessBot bot = new BeginnerBot();
+            takeBoardSnapshot(); // update -> freeze the board visually before bot starts
+            botThinking = true; // update -> lock input while bot calculates
+            new Thread(() -> {
+                Move bestMove = bot.getBestMove(board, true); // true = White
+                // update -> artificial delay so the bot move doesn't appear instantly
+                try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    executeBotMove(bestMove);
+                });
+            }).start();
+        }
         // Reset drag state
         dragFromRow = -1;
         dragFromCol = -1;
@@ -294,9 +397,61 @@ public class ChessBoardUI extends JFrame {
         }
     }
 }
+// bot move
+public void executeBotMove(Move move) {
+    botThinking = false; // update -> unlock human input now that bot has finished
+    if (move == null || gameOver) return;
+    Square startSquare = board.getSquare(move.startRow, move.startCol);
+    Square endSquare = board.getSquare(move.endRow, move.endCol);
+    Piece piece = startSquare.getPiece();
+    // 1. Physically move the piece on the board
+    endSquare.setPiece(piece);
+    startSquare.setPiece(null);
+    piece.setMoved(true);
+    // update -> handle castling: if king moved 2 squares, also move the rook
+    if (piece instanceof King && Math.abs(move.startCol - move.endCol) == 2) {
+        int rookFromCol = (move.endCol == 6) ? 7 : 0;
+        int rookToCol   = (move.endCol == 6) ? 5 : 3;
+        Square rookFrom = board.getSquare(move.endRow, rookFromCol);
+        Square rookTo   = board.getSquare(move.endRow, rookToCol);
+        Piece rook = rookFrom.getPiece();
+        if (rook != null) {
+            rookTo.setPiece(rook);
+            rookFrom.setPiece(null);
+            rook.setMoved(true);
+        }
+    }
+    // update -> handle pawn promotion: auto-promote bot pawn to queen
+    if (move.isPromotion && piece instanceof Pawn) {
+        endSquare.setPiece(new Queen(piece.isWhite()));
+    }
+    // 2. Switch the turn back to the Human (Black)
+    gameController.switchTurn();
+    boardPanel.repaint(); // Update the screen
+    // 3. Check if the Bot just Checkmated the Human
+    if (board.isCheckmate(false)){
+        JOptionPane.showMessageDialog(this, "Checkmate! The Bot wins!");
+        gameOver = true;
+    } else if (board.isStalemate(false)){
+        JOptionPane.showMessageDialog(this, "Stalemate! It's a draw.");
+        gameOver = true;
+    } else if (board.isChecked(false)){
+        JOptionPane.showMessageDialog(this, "Your King is in Check!");
+    }
+}
+
+    // update -> takes a photo of current piece positions before bot calculation begins
+    private void takeBoardSnapshot() {
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                pieceSnapshot[r][c] = board.getSquare(r, c).getPiece();
+            }
+        }
+    }
 
     /** Force a visual refresh (called on mouse-drag for smooth feedback). */
     public void refresh() {
+        if (botThinking) return; // update -> suppress repaints during bot calculation to prevent piece flicker
         boardPanel.repaint();
     }
 
@@ -331,8 +486,55 @@ public class ChessBoardUI extends JFrame {
     //  Entry point for quick standalone testing
     // ---------------------------------------------------------------
     public static void main(String[] args) {
-        Board board = new Board();
-        GameController gc = new GameController();
+        // before starting the game, pop up a menu first 
+
+
+
+    String[] modeOptions = {"1 Player (vs Bot)", "2 Players (Local)"};
+    int modeChoice = JOptionPane.showOptionDialog(null,
+            "Welcome to Chess! Select Game Mode:",
+            "Main Menu",
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.INFORMATION_MESSAGE,
+            null,
+            modeOptions,
+            modeOptions[0]);
+    // If they closed the window, exit the program safely
+    if (modeChoice == JOptionPane.CLOSED_OPTION) {
+        System.exit(0);
+    }
+    boolean isSinglePlayer = (modeChoice == 0);
+    int botDepth = 0;
+    // 2. Second Menu: Choose Difficulty (Only if 1 Player was selected)
+    boolean useQS = false; // default 
+    if (isSinglePlayer) {
+        String[] diffOptions = {"Beginner","Amateur","Intermediate", "Hard"};
+        int diffChoice = JOptionPane.showOptionDialog(null,
+                "Select Bot Difficulty:",
+                "Difficulty",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                diffOptions,
+                diffOptions[0]);
+        
+        // Map their choice to an actual depth number
+        if (diffChoice == 0) botDepth = 3;  // beginerr only minimax depth 3
+        else if (diffChoice == 1) {
+            botDepth = 3;
+            useQS = true; // amatuer -> depth 3 + Quiesence Search
+        } // mid depth 4 + Quiesence Search
+        else if (diffChoice == 2) {
+            botDepth = 4; // Interediate -> depth 4 + Quiesence Search
+            useQS = true;
+        }else if (diffChoice == 3){
+            botDepth = 5;  // hard -> depth 5 + QUiesence Search
+            useQS = true;
+        }
+    }
+    // 3. Initialize the game with the chosen settings!
+    Board board = new Board();
+    GameController gc = new GameController(isSinglePlayer, botDepth, useQS);
         
         // Setting Rooks
         board.getSquare(0,0).setPiece(new Rook(true));
