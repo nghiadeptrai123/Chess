@@ -2,6 +2,12 @@ package lab;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import javax.imageio.ImageIO;
 
 public class ChessBoardUI extends JFrame {
 
@@ -21,9 +27,13 @@ public class ChessBoardUI extends JFrame {
     // Game state
     private boolean gameOver = false;
 
+    // Piece images: key = "White King", "Black Pawn", etc.
+    private Map<String, BufferedImage> pieceImages = new HashMap<>();
+
     public ChessBoardUI(Board board, GameController gameController) {
         this.board = board;
         this.gameController = gameController;
+        loadPieceImages();
 
         setTitle("Chess Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -104,40 +114,45 @@ public class ChessBoardUI extends JFrame {
             }
         }
 
-        /** Loop through every Square; if it holds a Piece, draw its label. */
+        /** Loop through every Square; if it holds a Piece, draw its image. */
         private void drawPieces(Graphics g) {
-            g.setFont(new Font("SansSerif", Font.BOLD, 14));
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int padding = 6; // px gap from tile edge
+            int imgSize = TILE_SIZE - padding * 2;
 
             for (int row = 0; row < BOARD_SIZE; row++) {
                 for (int col = 0; col < BOARD_SIZE; col++) {
-                    Piece piece = board.getSquare(row,col).getPiece();
+                    Piece piece = board.getSquare(row, col).getPiece();
                     if (piece != null) {
-                        String label = getPieceLabel(piece);
-                        g.setColor(piece.isWhite() ? Color.WHITE : Color.BLACK);
-
-                        // Center the text inside the tile
-                        FontMetrics fm = g.getFontMetrics();
-                        int x = col * TILE_SIZE + (TILE_SIZE - fm.stringWidth(label)) / 2;
-                        int y = row * TILE_SIZE + (TILE_SIZE + fm.getAscent()) / 2 - 2;
-
-                        // Draw a shadow/outline for readability
-                        g.setColor(piece.isWhite() ? Color.DARK_GRAY : Color.LIGHT_GRAY);
-                        g.drawString(label, x + 1, y + 1);
-                        g.setColor(piece.isWhite() ? Color.WHITE : Color.BLACK);
-                        g.drawString(label, x, y);
+                        String key = getPieceImageKey(piece);
+                        BufferedImage img = pieceImages.get(key);
+                        if (img != null) {
+                            int x = col * TILE_SIZE + padding;
+                            int y = row * TILE_SIZE + padding;
+                            g2.drawImage(img, x, y, imgSize, imgSize, null);
+                        } else {
+                            // Fallback: draw text if image missing
+                            g.setFont(new Font("SansSerif", Font.BOLD, 12));
+                            String label = (piece.isWhite() ? "W" : "B") + "-" + piece.getClass().getSimpleName();
+                            FontMetrics fm = g.getFontMetrics();
+                            int tx = col * TILE_SIZE + (TILE_SIZE - fm.stringWidth(label)) / 2;
+                            int ty = row * TILE_SIZE + (TILE_SIZE + fm.getAscent()) / 2 - 2;
+                            g.setColor(piece.isWhite() ? Color.WHITE : Color.BLACK);
+                            g.drawString(label, tx, ty);
+                        }
                     }
                 }
             }
         }
 
-        /**
-         * Returns a short text label for a piece, e.g. "W-Pawn".
-         * Extend this switch with your concrete Piece subclasses.
-         */
-        private String getPieceLabel(Piece piece) {
-            String color  = piece.isWhite() ? "W" : "B";
-            String type   = piece.getClass().getSimpleName(); // e.g. "Pawn", "Rook" …
-            return color + "-" + type;
+        // Returns the map key for a piece, e.g. "White King" or "Black Pawn"
+        private String getPieceImageKey(Piece piece) {
+            String color = piece.isWhite() ? "White" : "Black";
+            String type  = piece.getClass().getSimpleName(); // e.g. "King", "Pawn"
+            return color + " " + type;
         }
     }
 
@@ -198,6 +213,21 @@ public class ChessBoardUI extends JFrame {
                 endSquare.setPiece(piece);
                 startSquare.setPiece(null);
                 piece.setMoved(true);
+                // implementing Castling: move the rook to the square the king passed through
+                if (piece instanceof King) {
+                    King king = (King) piece;
+                    if (king.isCastlingMove(startSquare, endSquare)) {
+                        int rookFromCol = king.getCastlingRookCol(startSquare, endSquare);
+                        // rook lands on the square the king crossed
+                        int rookToCol = (rookFromCol == 7) ? dragToCol - 1 : dragToCol + 1;
+                        Square rookFrom = board.getSquare(dragToRow, rookFromCol);
+                        Square rookTo   = board.getSquare(dragToRow, rookToCol);
+                        Piece rook = rookFrom.getPiece();
+                        rookTo.setPiece(rook);
+                        rookFrom.setPiece(null);
+                        if (rook != null) rook.setMoved(true);
+                    }
+                }
                 // implementing Pawn Promotion
                 if (piece instanceof Pawn){
                     // white promtoe at row 7, black promote at row 0
@@ -268,6 +298,33 @@ public class ChessBoardUI extends JFrame {
     /** Force a visual refresh (called on mouse-drag for smooth feedback). */
     public void refresh() {
         boardPanel.repaint();
+    }
+
+    /**
+     * Loads all 12 piece PNGs from the "chess pieces" folder into the pieceImages map.
+     * Expected filenames: "White King.png", "Black Pawn.png", etc.
+     */
+    private void loadPieceImages() {
+        String[] colors = {"White", "Black"};
+        String[] types  = {"King", "Queen", "Rook", "Bishop", "Knight", "Pawn"};
+        // Resolve the folder relative to where the program is launched from
+        File imgDir = new File("chess pieces");
+        for (String color : colors) {
+            for (String type : types) {
+                String key = color + " " + type;
+                File file = new File(imgDir, key + ".png");
+                try {
+                    BufferedImage img = ImageIO.read(file);
+                    if (img != null) {
+                        pieceImages.put(key, img);
+                    } else {
+                        System.err.println("Could not decode: " + file.getPath());
+                    }
+                } catch (IOException e) {
+                    System.err.println("Missing image: " + file.getPath());
+                }
+            }
+        }
     }
 
     // ---------------------------------------------------------------
