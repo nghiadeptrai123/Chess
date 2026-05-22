@@ -88,11 +88,8 @@ public class King extends Piece {
     private boolean isSquareAttacked(Board board, int row, int col, boolean isWhite) {
         Square target = board.getSquare(row, col);
 
-        // Temporarily place the king on that square
+        // Temporarily place the king on that square and check if any enemy can reach it
         target.setPiece(this);
-        Square kingSquare = MoveHelper.findKing(board, isWhite);
-        // If our king is already somewhere else, we need to evaluate from target
-        // We simulate by checking if any enemy can reach (row, col)
         boolean attacked = false;
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
