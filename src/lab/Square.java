@@ -5,45 +5,30 @@ public class Square {
 	private final int row;
 	private final int col;
 	private Piece piece = null;
-
-	public Square(boolean isWhite, int row, int col) {
+	public Square(boolean isWhite, int row, int col){
 		this.isWhite = isWhite;
 		this.row = row;
 		this.col = col;
 	}
-
-	public Square(boolean isWhite, int col, int row, Piece piece) {
+	public Square(boolean isWhite, int col, int row, Piece piece){
 		this.isWhite = isWhite;
 		this.row = row;
 		this.col = col;
 		this.piece = piece;
-		if (piece != null) {
-			piece.setRow(row);
-			piece.setCol(col);
-		}
 	}
-
 	public boolean isWhite() {
-		return isWhite;
-	}
-
-	public int getRow() {
-		return row;
-	}
-
-	public int getCol() {
-		return col;
-	}
-
-	public Piece getPiece() {
-		return piece;
-	}
-
-	public void setPiece(Piece piece) {
-		this.piece = piece;
-		if (piece != null) {
-			piece.setRow(this.row);
-			piece.setCol(this.col);
-		}
-	}
+        return isWhite;
+    }
+    public int getRow() {
+        return row;
+    }
+    public int getCol() {
+        return col;
+    }
+    public Piece getPiece() {
+        return piece;
+    }
+    public void setPiece(Piece piece) {
+        this.piece = piece;
+    }
 }

@@ -560,39 +560,36 @@ public class ChessBoardUI extends JFrame {
         Board board = new Board();
         GameController gc = new GameController(isSinglePlayer, botDepth, useQS);
 
-        board.pieces = new Piece[32];
-        int pIdx = 0;
-
         // Setting Rooks
-        Piece wr1 = new Rook(true); wr1.setRow(0); wr1.setCol(0); board.getSquare(0, 0).setPiece(wr1); board.pieces[pIdx++] = wr1;
-        Piece wr2 = new Rook(true); wr2.setRow(0); wr2.setCol(7); board.getSquare(0, 7).setPiece(wr2); board.pieces[pIdx++] = wr2;
-        Piece br1 = new Rook(false); br1.setRow(7); br1.setCol(0); board.getSquare(7, 0).setPiece(br1); board.pieces[pIdx++] = br1;
-        Piece br2 = new Rook(false); br2.setRow(7); br2.setCol(7); board.getSquare(7, 7).setPiece(br2); board.pieces[pIdx++] = br2;
+        board.getSquare(0, 0).setPiece(new Rook(true));
+        board.getSquare(0, 7).setPiece(new Rook(true));
+        board.getSquare(7, 0).setPiece(new Rook(false));
+        board.getSquare(7, 7).setPiece(new Rook(false));
 
         // Setting Knights
-        Piece wk1 = new Knight(true); wk1.setRow(0); wk1.setCol(1); board.getSquare(0, 1).setPiece(wk1); board.pieces[pIdx++] = wk1;
-        Piece wk2 = new Knight(true); wk2.setRow(0); wk2.setCol(6); board.getSquare(0, 6).setPiece(wk2); board.pieces[pIdx++] = wk2;
-        Piece bk1 = new Knight(false); bk1.setRow(7); bk1.setCol(1); board.getSquare(7, 1).setPiece(bk1); board.pieces[pIdx++] = bk1;
-        Piece bk2 = new Knight(false); bk2.setRow(7); bk2.setCol(6); board.getSquare(7, 6).setPiece(bk2); board.pieces[pIdx++] = bk2;
+        board.getSquare(0, 1).setPiece(new Knight(true));
+        board.getSquare(0, 6).setPiece(new Knight(true));
+        board.getSquare(7, 1).setPiece(new Knight(false));
+        board.getSquare(7, 6).setPiece(new Knight(false));
 
         // Setting Bishops
-        Piece wb1 = new Bishop(true); wb1.setRow(0); wb1.setCol(2); board.getSquare(0, 2).setPiece(wb1); board.pieces[pIdx++] = wb1;
-        Piece wb2 = new Bishop(true); wb2.setRow(0); wb2.setCol(5); board.getSquare(0, 5).setPiece(wb2); board.pieces[pIdx++] = wb2;
-        Piece bb1 = new Bishop(false); bb1.setRow(7); bb1.setCol(2); board.getSquare(7, 2).setPiece(bb1); board.pieces[pIdx++] = bb1;
-        Piece bb2 = new Bishop(false); bb2.setRow(7); bb2.setCol(5); board.getSquare(7, 5).setPiece(bb2); board.pieces[pIdx++] = bb2;
+        board.getSquare(0, 2).setPiece(new Bishop(true));
+        board.getSquare(0, 5).setPiece(new Bishop(true));
+        board.getSquare(7, 2).setPiece(new Bishop(false));
+        board.getSquare(7, 5).setPiece(new Bishop(false));
 
         // Setting Queens
-        Piece wq = new Queen(true); wq.setRow(0); wq.setCol(3); board.getSquare(0, 3).setPiece(wq); board.pieces[pIdx++] = wq;
-        Piece bq = new Queen(false); bq.setRow(7); bq.setCol(3); board.getSquare(7, 3).setPiece(bq); board.pieces[pIdx++] = bq;
+        board.getSquare(0, 3).setPiece(new Queen(true));
+        board.getSquare(7, 3).setPiece(new Queen(false));
 
         // Setting Kings
-        Piece wKing = new King(true); wKing.setRow(0); wKing.setCol(4); board.getSquare(0, 4).setPiece(wKing); board.pieces[pIdx++] = wKing;
-        Piece bKing = new King(false); bKing.setRow(7); bKing.setCol(4); board.getSquare(7, 4).setPiece(bKing); board.pieces[pIdx++] = bKing;
+        board.getSquare(0, 4).setPiece(new King(true));
+        board.getSquare(7, 4).setPiece(new King(false));
 
         // Setting Pawns
         for (int col = 0; col < 8; col++) {
-            Piece wp = new Pawn(true); wp.setRow(1); wp.setCol(col); board.getSquare(1, col).setPiece(wp); board.pieces[pIdx++] = wp;
-            Piece bp = new Pawn(false); bp.setRow(6); bp.setCol(col); board.getSquare(6, col).setPiece(bp); board.pieces[pIdx++] = bp;
+            board.getSquare(1, col).setPiece(new Pawn(true)); // White Pawns on row 1
+            board.getSquare(6, col).setPiece(new Pawn(false)); // Black Pawns on row 6
         }
 
         new ChessBoardUI(board, gc);

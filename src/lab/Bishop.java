@@ -23,13 +23,13 @@ public class Bishop extends Piece {
         int c = start.getCol() + colStep;
 
         while (r != end.getRow() && c != end.getCol()) {
-            if (board.getSquare(r, c).getPiece() != null) {
+            if (board.getSquare(r,c).getPiece() != null) {
                 return false;
             }
             r += rowStep;
             c += colStep;
         }
+
         return true;
     }
-
 }
