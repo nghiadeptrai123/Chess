@@ -21,14 +21,15 @@ public class ChessBoardUI extends JFrame {
     // Drag state
     private int dragFromRow = -1;
     private int dragFromCol = -1;
-    private int dragToRow   = -1;
-    private int dragToCol   = -1;
-    
+    private int dragToRow = -1;
+    private int dragToCol = -1;
+
     // Game state
     private boolean gameOver = false;
     // update -> flag to block human input and repaints while the bot is calculating
     private boolean botThinking = false;
-    // update -> frozen snapshot of piece positions taken before the bot starts calculating
+    // update -> frozen snapshot of piece positions taken before the bot starts
+    // calculating
     private Piece[][] pieceSnapshot = new Piece[8][8];
 
     // Piece images: key = "White King", "Black Pawn", etc.
@@ -53,9 +54,8 @@ public class ChessBoardUI extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
 
-   
-    // by default, bot will be white, first move
-    if (gameController.isSinglePlayer && gameController.isWhiteTurn) {
+        // by default, bot will be white, first move
+        if (gameController.isSinglePlayer && gameController.isWhiteTurn) {
             ChessBot bot = new BeginnerBot();
             takeBoardSnapshot(); // update -> freeze the board visually before bot starts
             botThinking = true; // update -> lock input while bot calculates opening move
@@ -63,7 +63,11 @@ public class ChessBoardUI extends JFrame {
             new Thread(() -> {
                 Move openingMove = bot.getBestMove(board, true); // true = White
                 // update -> artificial delay so the bot move doesn't appear instantly
-                try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                try {
+                    Thread.sleep(600);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
                 // Hand the result back to the UI worker
                 javax.swing.SwingUtilities.invokeLater(() -> {
                     executeBotMove(openingMove);
@@ -71,18 +75,9 @@ public class ChessBoardUI extends JFrame {
             }).start();
         }
     }
-    
-
-
-
-
-
-
-
-
 
     // ---------------------------------------------------------------
-    //  Inner panel — all painting happens here
+    // Inner panel — all painting happens here
     // ---------------------------------------------------------------
     class BoardPanel extends JPanel {
 
@@ -105,34 +100,36 @@ public class ChessBoardUI extends JFrame {
         }
 
         /*
-        updateded:  highlighting possible move
-        */
-        private void drawHighlights(Graphics g){
-        // check if a piece is currently selected/dragged
-        if (dragFromRow != -1 && dragFromCol != -1){
-            Square startSquare = board.getSquare(dragFromRow, dragFromCol);
-            Piece piece = startSquare.getPiece();
+         * updateded: highlighting possible move
+         */
+        private void drawHighlights(Graphics g) {
+            // check if a piece is currently selected/dragged
+            if (dragFromRow != -1 && dragFromCol != -1) {
+                Square startSquare = board.getSquare(dragFromRow, dragFromCol);
+                Piece piece = startSquare.getPiece();
 
-            if (piece != null && gameController.isCorrectTurn(piece)){
-                g.setColor(new Color(50,150,50,150));
-                int circleSize = 20;
-                 int offset = (TILE_SIZE - circleSize) / 2; // Centers the circle
-                 // traverse all table to find all valid moves.
-                for (int i = 0 ; i < 8 ;++i){
-                    for (int j = 0 ; j < 8 ; ++j){
-                        Square endSquare = board.getSquare(i, j);
-                        if (piece.isValidMove(board, startSquare, endSquare)){
-                            if(!board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())){
-                                // that move will not cause check -> a possible move
-                                if(endSquare.getPiece()==null){
-                                g.fillOval(j * TILE_SIZE + offset, i * TILE_SIZE + offset, circleSize, circleSize);
-                                }else{
-                                    // update vong tron do cho PNG che o mau xanh problem
-                                    Graphics2D g2 = (Graphics2D) g;
-                                    g2.setColor(new Color(200, 50, 50, 150)); // semi-transparent red
-                                    g2.setStroke(new BasicStroke(4)); // 4 pixel thick border
-                                    g2.drawOval(j * TILE_SIZE + 4, i * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8);
-                                    g2.setColor(new Color(50, 150, 50, 150)); // reset back to green
+                if (piece != null && gameController.isCorrectTurn(piece)) {
+                    g.setColor(new Color(50, 150, 50, 150));
+                    int circleSize = 20;
+                    int offset = (TILE_SIZE - circleSize) / 2; // Centers the circle
+                    // traverse all table to find all valid moves.
+                    for (int i = 0; i < 8; ++i) {
+                        for (int j = 0; j < 8; ++j) {
+                            Square endSquare = board.getSquare(i, j);
+                            if (piece.isValidMove(board, startSquare, endSquare)) {
+                                if (!board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())) {
+                                    // that move will not cause check -> a possible move
+                                    if (endSquare.getPiece() == null) {
+                                        g.fillOval(j * TILE_SIZE + offset, i * TILE_SIZE + offset, circleSize,
+                                                circleSize);
+                                    } else {
+                                        // update vong tron do cho PNG che o mau xanh problem
+                                        Graphics2D g2 = (Graphics2D) g;
+                                        g2.setColor(new Color(200, 50, 50, 150)); // semi-transparent red
+                                        g2.setStroke(new BasicStroke(4)); // 4 pixel thick border
+                                        g2.drawOval(j * TILE_SIZE + 4, i * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                                        g2.setColor(new Color(50, 150, 50, 150)); // reset back to green
+                                    }
                                 }
                             }
                         }
@@ -140,14 +137,12 @@ public class ChessBoardUI extends JFrame {
                 }
             }
         }
-        }
-
 
         /** Draw the 8x8 alternating light/dark squares. */
         private void drawBoard(Graphics g) {
             for (int row = 0; row < BOARD_SIZE; row++) {
                 for (int col = 0; col < BOARD_SIZE; col++) {
-                    boolean isLight = board.getSquare(row,col).isWhite();
+                    boolean isLight = board.getSquare(row, col).isWhite();
                     g.setColor(isLight ? new Color(240, 217, 181) : new Color(181, 136, 99));
                     g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
@@ -195,7 +190,8 @@ public class ChessBoardUI extends JFrame {
         }
 
         // update -> draws pieces from the frozen snapshot instead of the live board
-        // used while the bot is calculating to prevent flicker from mid-simulation mutations
+        // used while the bot is calculating to prevent flicker from mid-simulation
+        // mutations
         private void drawPiecesFromSnapshot(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -232,20 +228,24 @@ public class ChessBoardUI extends JFrame {
         // Returns the map key for a piece, e.g. "White King" or "Black Pawn"
         private String getPieceImageKey(Piece piece) {
             String color = piece.isWhite() ? "White" : "Black";
-            String type  = piece.getClass().getSimpleName(); // e.g. "King", "Pawn"
+            String type = piece.getClass().getSimpleName(); // e.g. "King", "Pawn"
             return color + " " + type;
         }
     }
 
     // ---------------------------------------------------------------
-    //  Public helpers used by MouseInputListener
+    // Public helpers used by MouseInputListener
     // ---------------------------------------------------------------
 
     /** Convert a pixel coordinate to a board row (0-7). */
-    public int pixelToRow(int y) { return y / TILE_SIZE; }
+    public int pixelToRow(int y) {
+        return y / TILE_SIZE;
+    }
 
     /** Convert a pixel coordinate to a board column (0-7). */
-    public int pixelToCol(int x) { return x / TILE_SIZE; }
+    public int pixelToCol(int x) {
+        return x / TILE_SIZE;
+    }
 
     /** Returns true when (row, col) is inside the 8×8 grid. */
     public boolean inBounds(int row, int col) {
@@ -257,8 +257,10 @@ public class ChessBoardUI extends JFrame {
      * Records the source square and highlights it.
      */
     public void setDragFrom(int row, int col) {
-        if (gameOver) return;
-        if (botThinking) return; // update -> block human input while bot is calculating
+        if (gameOver)
+            return;
+        if (botThinking)
+            return; // update -> block human input while bot is calculating
         dragFromRow = row;
         dragFromCol = col;
         boardPanel.repaint();
@@ -271,11 +273,13 @@ public class ChessBoardUI extends JFrame {
 
     // this is human move
     public void tryMove(int toRow, int toCol) {
-        if (gameOver) return;
-        if (botThinking) return; // update -> block human input while bot is calculating
+        if (gameOver)
+            return;
+        if (botThinking)
+            return; // update -> block human input while bot is calculating
         dragToRow = toRow;
         dragToCol = toCol;
-        if (dragFromRow == toRow && dragFromCol == toCol){
+        if (dragFromRow == toRow && dragFromCol == toCol) {
             // updated: reject moving to the same destination , reset to the initial state
             dragFromRow = -1;
             dragFromCol = -1;
@@ -290,80 +294,84 @@ public class ChessBoardUI extends JFrame {
             if (piece != null
                     && gameController.isCorrectTurn(piece)
                     && piece.isValidMove(board, startSquare, endSquare)) {
-                //check if the move leaves king in check
-                if(board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())){
-                JOptionPane.showMessageDialog(this, "Illegal Move: Check Alert!!!");
-                // check position alert
-                // update -> return early so the bot is not triggered after an illegal human move
-                dragFromRow = -1;
-                dragFromCol = -1;
-                boardPanel.repaint();
-                return;
-                }else{
-                endSquare.setPiece(piece);
-                startSquare.setPiece(null);
-                piece.setMoved(true);
-                // implementing Castling: move the rook to the square the king passed through
-                if (piece instanceof King) {
-                    King king = (King) piece;
-                    if (king.isCastlingMove(startSquare, endSquare)) {
-                        int rookFromCol = king.getCastlingRookCol(startSquare, endSquare);
-                        // rook lands on the square the king crossed
-                        int rookToCol = (rookFromCol == 7) ? dragToCol - 1 : dragToCol + 1;
-                        Square rookFrom = board.getSquare(dragToRow, rookFromCol);
-                        Square rookTo   = board.getSquare(dragToRow, rookToCol);
-                        Piece rook = rookFrom.getPiece();
-                        rookTo.setPiece(rook);
-                        rookFrom.setPiece(null);
-                        if (rook != null) rook.setMoved(true);
-                    }
-                }
-                // implementing Pawn Promotion
-                if (piece instanceof Pawn){
-                    // white promtoe at row 7, black promote at row 0
-                    int promotionRow = piece.isWhite() ? 7:0;
-                    if (dragToRow == promotionRow){
-                        // go to promtionRow
-                        String[] options = {"Queen","Rock","Bishop","Knight"};
-                        int choice = JOptionPane.showOptionDialog(this,"Choose a piece to promote to:","Pawn Promotion",JOptionPane.DEFAULT_OPTION,  JOptionPane.QUESTION_MESSAGE,null, options, options[0]); // Default to Queen
-                        Piece promotedPiece;
-                        switch(choice){
-                            case 1: 
-                                promotedPiece = new Rook(piece.isWhite()); 
-                                break;
-                            case 2:
-                                promotedPiece = new Bishop(piece.isWhite()); 
-                                break;
-                            case 3:
-                                promotedPiece = new Knight(piece.isWhite()); 
-                                break;
-                            default: //queen by default or 0
-                                promotedPiece = new Queen(piece.isWhite()); 
-                                break;
+                // check if the move leaves king in check
+                if (board.willMoveResultInCheck(startSquare, endSquare, piece.isWhite())) {
+                    JOptionPane.showMessageDialog(this, "Illegal Move: Check Alert!!!");
+                    // check position alert
+                    // update -> return early so the bot is not triggered after an illegal human
+                    // move
+                    dragFromRow = -1;
+                    dragFromCol = -1;
+                    boardPanel.repaint();
+                    return;
+                } else {
+                    endSquare.setPiece(piece);
+                    startSquare.setPiece(null);
+                    // implementing Castling: move the rook to the square the king passed through
+                    if (piece instanceof King) {
+                        King king = (King) piece;
+                        if (king.isCastlingMove(startSquare, endSquare)) {
+                            int rookFromCol = king.getCastlingRookCol(startSquare, endSquare);
+                            // rook lands on the square the king crossed
+                            int rookToCol = (rookFromCol == 7) ? dragToCol - 1 : dragToCol + 1;
+                            Square rookFrom = board.getSquare(dragToRow, rookFromCol);
+                            Square rookTo = board.getSquare(dragToRow, rookToCol);
+                            Piece rook = rookFrom.getPiece();
+                            rookTo.setPiece(rook);
+                            rookFrom.setPiece(null);
+                            if (rook != null)
+                                rook.setMoved(true);
                         }
-                        // upgrade pawn to -> promoteedPiece (choice)
-                        endSquare.setPiece(promotedPiece);
-                 }
-                }
-                gameController.switchTurn();
-                
+                    }
+                    piece.setMoved(true);
+                    // implementing Pawn Promotion
+                    if (piece instanceof Pawn) {
+                        // white promtoe at row 7, black promote at row 0
+                        int promotionRow = piece.isWhite() ? 7 : 0;
+                        if (dragToRow == promotionRow) {
+                            // go to promtionRow
+                            String[] options = { "Queen", "Rock", "Bishop", "Knight" };
+                            int choice = JOptionPane.showOptionDialog(this, "Choose a piece to promote to:",
+                                    "Pawn Promotion", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+                                    options, options[0]); // Default to Queen
+                            Piece promotedPiece;
+                            switch (choice) {
+                                case 1:
+                                    promotedPiece = new Rook(piece.isWhite());
+                                    break;
+                                case 2:
+                                    promotedPiece = new Bishop(piece.isWhite());
+                                    break;
+                                case 3:
+                                    promotedPiece = new Knight(piece.isWhite());
+                                    break;
+                                default: // queen by default or 0
+                                    promotedPiece = new Queen(piece.isWhite());
+                                    break;
+                            }
+                            // upgrade pawn to -> promoteedPiece (choice)
+                            endSquare.setPiece(promotedPiece);
+                        }
+                    }
+                    gameController.switchTurn();
 
-                boolean nextPlayeriswhite = gameController.isWhiteTurn;
+                    boolean nextPlayeriswhite = gameController.isWhiteTurn;
 
-                if (board.isCheckmate(nextPlayeriswhite)){
-                    String winner = nextPlayeriswhite ? "Black" : "White";
-                    JOptionPane.showMessageDialog(this, "Checkmate! " + winner + " wins!");
-                    gameOver = true;
-                } else if (board.isStalemate(nextPlayeriswhite)){
-                    JOptionPane.showMessageDialog(this, "Stalemate! This game is a draw.");
-                    gameOver = true;
-                } else if (board.isChecked(nextPlayeriswhite)){
-                    JOptionPane.showMessageDialog(this, (nextPlayeriswhite ? "White" : "Black") + " King is in Check!");
+                    if (board.isCheckmate(nextPlayeriswhite)) {
+                        String winner = nextPlayeriswhite ? "Black" : "White";
+                        JOptionPane.showMessageDialog(this, "Checkmate! " + winner + " wins!");
+                        gameOver = true;
+                    } else if (board.isStalemate(nextPlayeriswhite)) {
+                        JOptionPane.showMessageDialog(this, "Stalemate! This game is a draw.");
+                        gameOver = true;
+                    } else if (board.isChecked(nextPlayeriswhite)) {
+                        JOptionPane.showMessageDialog(this,
+                                (nextPlayeriswhite ? "White" : "Black") + " King is in Check!");
+                    }
                 }
             }
         }
-        }
-                // --- NEW: Trigger the Bot's response ---
+        // --- NEW: Trigger the Bot's response ---
         if (gameController.isSinglePlayer && gameController.isWhiteTurn && !gameOver) {
             ChessBot bot = new BeginnerBot();
             takeBoardSnapshot(); // update -> freeze the board visually before bot starts
@@ -371,7 +379,11 @@ public class ChessBoardUI extends JFrame {
             new Thread(() -> {
                 Move bestMove = bot.getBestMove(board, true); // true = White
                 // update -> artificial delay so the bot move doesn't appear instantly
-                try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                try {
+                    Thread.sleep(600);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
                 javax.swing.SwingUtilities.invokeLater(() -> {
                     executeBotMove(bestMove);
                 });
@@ -384,63 +396,66 @@ public class ChessBoardUI extends JFrame {
     }
 
     public void handleMouseHover(int row, int col) {
-    if (inBounds(row, col)) {
-        Piece piece = board.getSquare(row, col).getPiece();
-        
-        // If there is a piece, and it belongs to the player whose turn it is:
-        if (piece != null && gameController.isCorrectTurn(piece)) {
-            // Change the mouse cursor to a Hand pointer
-            boardPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        } else {
-            // Otherwise, keep it as the default arrow
-            boardPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        }
-    }
-}
-// bot move
-public void executeBotMove(Move move) {
-    botThinking = false; // update -> unlock human input now that bot has finished
-    if (move == null || gameOver) return;
-    Square startSquare = board.getSquare(move.startRow, move.startCol);
-    Square endSquare = board.getSquare(move.endRow, move.endCol);
-    Piece piece = startSquare.getPiece();
-    // 1. Physically move the piece on the board
-    endSquare.setPiece(piece);
-    startSquare.setPiece(null);
-    piece.setMoved(true);
-    // update -> handle castling: if king moved 2 squares, also move the rook
-    if (piece instanceof King && Math.abs(move.startCol - move.endCol) == 2) {
-        int rookFromCol = (move.endCol == 6) ? 7 : 0;
-        int rookToCol   = (move.endCol == 6) ? 5 : 3;
-        Square rookFrom = board.getSquare(move.endRow, rookFromCol);
-        Square rookTo   = board.getSquare(move.endRow, rookToCol);
-        Piece rook = rookFrom.getPiece();
-        if (rook != null) {
-            rookTo.setPiece(rook);
-            rookFrom.setPiece(null);
-            rook.setMoved(true);
-        }
-    }
-    // update -> handle pawn promotion: auto-promote bot pawn to queen
-    if (move.isPromotion && piece instanceof Pawn) {
-        endSquare.setPiece(new Queen(piece.isWhite()));
-    }
-    // 2. Switch the turn back to the Human (Black)
-    gameController.switchTurn();
-    boardPanel.repaint(); // Update the screen
-    // 3. Check if the Bot just Checkmated the Human
-    if (board.isCheckmate(false)){
-        JOptionPane.showMessageDialog(this, "Checkmate! The Bot wins!");
-        gameOver = true;
-    } else if (board.isStalemate(false)){
-        JOptionPane.showMessageDialog(this, "Stalemate! It's a draw.");
-        gameOver = true;
-    } else if (board.isChecked(false)){
-        JOptionPane.showMessageDialog(this, "Your King is in Check!");
-    }
-}
+        if (inBounds(row, col)) {
+            Piece piece = board.getSquare(row, col).getPiece();
 
-    // update -> takes a photo of current piece positions before bot calculation begins
+            // If there is a piece, and it belongs to the player whose turn it is:
+            if (piece != null && gameController.isCorrectTurn(piece)) {
+                // Change the mouse cursor to a Hand pointer
+                boardPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+            } else {
+                // Otherwise, keep it as the default arrow
+                boardPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+            }
+        }
+    }
+
+    // bot move
+    public void executeBotMove(Move move) {
+        botThinking = false; // update -> unlock human input now that bot has finished
+        if (move == null || gameOver)
+            return;
+        Square startSquare = board.getSquare(move.startRow, move.startCol);
+        Square endSquare = board.getSquare(move.endRow, move.endCol);
+        Piece piece = startSquare.getPiece();
+        // 1. Physically move the piece on the board
+        endSquare.setPiece(piece);
+        startSquare.setPiece(null);
+        piece.setMoved(true);
+        // update -> handle castling: if king moved 2 squares, also move the rook
+        if (piece instanceof King && Math.abs(move.startCol - move.endCol) == 2) {
+            int rookFromCol = (move.endCol == 6) ? 7 : 0;
+            int rookToCol = (move.endCol == 6) ? 5 : 3;
+            Square rookFrom = board.getSquare(move.endRow, rookFromCol);
+            Square rookTo = board.getSquare(move.endRow, rookToCol);
+            Piece rook = rookFrom.getPiece();
+            if (rook != null) {
+                rookTo.setPiece(rook);
+                rookFrom.setPiece(null);
+                rook.setMoved(true);
+            }
+        }
+        // update -> handle pawn promotion: auto-promote bot pawn to queen
+        if (move.isPromotion && piece instanceof Pawn) {
+            endSquare.setPiece(new Queen(piece.isWhite()));
+        }
+        // 2. Switch the turn back to the Human (Black)
+        gameController.switchTurn();
+        boardPanel.repaint(); // Update the screen
+        // 3. Check if the Bot just Checkmated the Human
+        if (board.isCheckmate(false)) {
+            JOptionPane.showMessageDialog(this, "Checkmate! The Bot wins!");
+            gameOver = true;
+        } else if (board.isStalemate(false)) {
+            JOptionPane.showMessageDialog(this, "Stalemate! It's a draw.");
+            gameOver = true;
+        } else if (board.isChecked(false)) {
+            JOptionPane.showMessageDialog(this, "Your King is in Check!");
+        }
+    }
+
+    // update -> takes a photo of current piece positions before bot calculation
+    // begins
     private void takeBoardSnapshot() {
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
@@ -451,17 +466,19 @@ public void executeBotMove(Move move) {
 
     /** Force a visual refresh (called on mouse-drag for smooth feedback). */
     public void refresh() {
-        if (botThinking) return; // update -> suppress repaints during bot calculation to prevent piece flicker
+        if (botThinking)
+            return; // update -> suppress repaints during bot calculation to prevent piece flicker
         boardPanel.repaint();
     }
 
     /**
-     * Loads all 12 piece PNGs from the "chess pieces" folder into the pieceImages map.
+     * Loads all 12 piece PNGs from the "chess pieces" folder into the pieceImages
+     * map.
      * Expected filenames: "White King.png", "Black Pawn.png", etc.
      */
     private void loadPieceImages() {
-        String[] colors = {"White", "Black"};
-        String[] types  = {"King", "Queen", "Rook", "Bishop", "Knight", "Pawn"};
+        String[] colors = { "White", "Black" };
+        String[] types = { "King", "Queen", "Rook", "Bishop", "Knight", "Pawn" };
         // Resolve the folder relative to where the program is launched from
         File imgDir = new File("chess pieces");
         for (String color : colors) {
@@ -483,92 +500,90 @@ public void executeBotMove(Move move) {
     }
 
     // ---------------------------------------------------------------
-    //  Entry point for quick standalone testing
+    // Entry point for quick standalone testing
     // ---------------------------------------------------------------
     public static void main(String[] args) {
-        // before starting the game, pop up a menu first 
+        // before starting the game, pop up a menu first
 
-
-
-    String[] modeOptions = {"1 Player (vs Bot)", "2 Players (Local)"};
-    int modeChoice = JOptionPane.showOptionDialog(null,
-            "Welcome to Chess! Select Game Mode:",
-            "Main Menu",
-            JOptionPane.DEFAULT_OPTION,
-            JOptionPane.INFORMATION_MESSAGE,
-            null,
-            modeOptions,
-            modeOptions[0]);
-    // If they closed the window, exit the program safely
-    if (modeChoice == JOptionPane.CLOSED_OPTION) {
-        System.exit(0);
-    }
-    boolean isSinglePlayer = (modeChoice == 0);
-    int botDepth = 0;
-    // 2. Second Menu: Choose Difficulty (Only if 1 Player was selected)
-    boolean useQS = false; // default 
-    if (isSinglePlayer) {
-        String[] diffOptions = {"Beginner","Amateur","Intermediate", "Hard"};
-        int diffChoice = JOptionPane.showOptionDialog(null,
-                "Select Bot Difficulty:",
-                "Difficulty",
+        String[] modeOptions = { "1 Player (vs Bot)", "2 Players (Local)" };
+        int modeChoice = JOptionPane.showOptionDialog(null,
+                "Welcome to Chess! Select Game Mode:",
+                "Main Menu",
                 JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
+                JOptionPane.INFORMATION_MESSAGE,
                 null,
-                diffOptions,
-                diffOptions[0]);
-        
-        // Map their choice to an actual depth number
-        if (diffChoice == 0) botDepth = 3;  // beginerr only minimax depth 3
-        else if (diffChoice == 1) {
-            botDepth = 3;
-            useQS = true; // amatuer -> depth 3 + Quiesence Search
-        } // mid depth 4 + Quiesence Search
-        else if (diffChoice == 2) {
-            botDepth = 4; // Interediate -> depth 4 + Quiesence Search
-            useQS = true;
-        }else if (diffChoice == 3){
-            botDepth = 5;  // hard -> depth 5 + QUiesence Search
-            useQS = true;
+                modeOptions,
+                modeOptions[0]);
+        // If they closed the window, exit the program safely
+        if (modeChoice == JOptionPane.CLOSED_OPTION) {
+            System.exit(0);
         }
-    }
-    // 3. Initialize the game with the chosen settings!
-    Board board = new Board();
-    GameController gc = new GameController(isSinglePlayer, botDepth, useQS);
-        
+        boolean isSinglePlayer = (modeChoice == 0);
+        int botDepth = 0;
+        // 2. Second Menu: Choose Difficulty (Only if 1 Player was selected)
+        boolean useQS = false; // default
+        if (isSinglePlayer) {
+            String[] diffOptions = { "Beginner", "Amateur", "Intermediate", "Hard" };
+            int diffChoice = JOptionPane.showOptionDialog(null,
+                    "Select Bot Difficulty:",
+                    "Difficulty",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    diffOptions,
+                    diffOptions[0]);
+
+            // Map their choice to an actual depth number
+            if (diffChoice == 0)
+                botDepth = 3; // beginerr only minimax depth 3
+            else if (diffChoice == 1) {
+                botDepth = 3;
+                useQS = true; // amatuer -> depth 3 + Quiesence Search
+            } // mid depth 4 + Quiesence Search
+            else if (diffChoice == 2) {
+                botDepth = 4; // Interediate -> depth 4 + Quiesence Search
+                useQS = true;
+            } else if (diffChoice == 3) {
+                botDepth = 5; // hard -> depth 5 + QUiesence Search
+                useQS = true;
+            }
+        }
+        // 3. Initialize the game with the chosen settings!
+        Board board = new Board();
+        GameController gc = new GameController(isSinglePlayer, botDepth, useQS);
+
         // Setting Rooks
-        board.getSquare(0,0).setPiece(new Rook(true));
-        board.getSquare(0,7).setPiece(new Rook(true));
-        board.getSquare(7,0).setPiece(new Rook(false));
-        board.getSquare(7,7).setPiece(new Rook(false));
-        
+        board.getSquare(0, 0).setPiece(new Rook(true));
+        board.getSquare(0, 7).setPiece(new Rook(true));
+        board.getSquare(7, 0).setPiece(new Rook(false));
+        board.getSquare(7, 7).setPiece(new Rook(false));
+
         // Setting Knights
-        board.getSquare(0,1).setPiece(new Knight(true));
-        board.getSquare(0,6).setPiece(new Knight(true));
-        board.getSquare(7,1).setPiece(new Knight(false));
-        board.getSquare(7,6).setPiece(new Knight(false));
-        
+        board.getSquare(0, 1).setPiece(new Knight(true));
+        board.getSquare(0, 6).setPiece(new Knight(true));
+        board.getSquare(7, 1).setPiece(new Knight(false));
+        board.getSquare(7, 6).setPiece(new Knight(false));
+
         // Setting Bishops
-        board.getSquare(0,2).setPiece(new Bishop(true));
-        board.getSquare(0,5).setPiece(new Bishop(true));
-        board.getSquare(7,2).setPiece(new Bishop(false));
-        board.getSquare(7,5).setPiece(new Bishop(false));
-        
+        board.getSquare(0, 2).setPiece(new Bishop(true));
+        board.getSquare(0, 5).setPiece(new Bishop(true));
+        board.getSquare(7, 2).setPiece(new Bishop(false));
+        board.getSquare(7, 5).setPiece(new Bishop(false));
+
         // Setting Queens
-        board.getSquare(0,3).setPiece(new Queen(true));
-        board.getSquare(7,3).setPiece(new Queen(false));
-        
+        board.getSquare(0, 3).setPiece(new Queen(true));
+        board.getSquare(7, 3).setPiece(new Queen(false));
+
         // Setting Kings
-        board.getSquare(0,4).setPiece(new King(true));
-        board.getSquare(7,4).setPiece(new King(false));
-        
+        board.getSquare(0, 4).setPiece(new King(true));
+        board.getSquare(7, 4).setPiece(new King(false));
+
         // Setting Pawns
         for (int col = 0; col < 8; col++) {
-            board.getSquare(1, col).setPiece(new Pawn(true));  // White Pawns on row 1
+            board.getSquare(1, col).setPiece(new Pawn(true)); // White Pawns on row 1
             board.getSquare(6, col).setPiece(new Pawn(false)); // Black Pawns on row 6
         }
-        
+
         new ChessBoardUI(board, gc);
     }
 }
-
