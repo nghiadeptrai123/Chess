@@ -17,6 +17,7 @@ public class ChessBoardUI extends JFrame {
     private Board board;
     private GameController gameController;
     private BoardPanel boardPanel;
+    private ChessBot activeBot;
 
     // Drag state
     private int dragFromRow = -1;
@@ -40,6 +41,15 @@ public class ChessBoardUI extends JFrame {
         this.gameController = gameController;
         loadPieceImages();
 
+        // Initialize the bot based on chosen difficulty
+        if (gameController.isSinglePlayer) {
+            if (gameController.botDepth == 5 && !gameController.useQS) {
+                activeBot = new AmateurBot();
+            } else {
+                activeBot = new BeginnerBot(); // default, also placeholder for future bots
+            }
+        }
+
         setTitle("Chess Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -56,12 +66,11 @@ public class ChessBoardUI extends JFrame {
 
         // by default, bot will be white, first move
         if (gameController.isSinglePlayer && gameController.isWhiteTurn) {
-            ChessBot bot = new BeginnerBot();
             takeBoardSnapshot(); // update -> freeze the board visually before bot starts
             botThinking = true; // update -> lock input while bot calculates opening move
             // Hire a background worker to think
             new Thread(() -> {
-                Move openingMove = bot.getBestMove(board, true); // true = White
+                Move openingMove = activeBot.getBestMove(board, true); // true = White
                 // update -> artificial delay so the bot move doesn't appear instantly
                 try {
                     Thread.sleep(600);
@@ -373,11 +382,10 @@ public class ChessBoardUI extends JFrame {
         }
         // --- NEW: Trigger the Bot's response ---
         if (gameController.isSinglePlayer && gameController.isWhiteTurn && !gameOver) {
-            ChessBot bot = new BeginnerBot();
             takeBoardSnapshot(); // update -> freeze the board visually before bot starts
             botThinking = true; // update -> lock input while bot calculates
             new Thread(() -> {
-                Move bestMove = bot.getBestMove(board, true); // true = White
+                Move bestMove = activeBot.getBestMove(board, true); // true = White
                 // update -> artificial delay so the bot move doesn't appear instantly
                 try {
                     Thread.sleep(600);
@@ -537,8 +545,8 @@ public class ChessBoardUI extends JFrame {
             if (diffChoice == 0)
                 botDepth = 3; // beginerr only minimax depth 3
             else if (diffChoice == 1) {
-                botDepth = 3;
-                useQS = true; // amatuer -> depth 3 + Quiesence Search
+                botDepth = 5;
+                useQS = false; // amatuer -> depth 5 not use Quiesence search
             } // mid depth 4 + Quiesence Search
             else if (diffChoice == 2) {
                 botDepth = 4; // Interediate -> depth 4 + Quiesence Search
