@@ -6,13 +6,14 @@ public class MoveHelper {
      * Finds the Square containing the King of the specified color.
      */
     public static Square findKing(Board board, boolean isWhite) {
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                Square square = board.getSquare(r, c);
-                Piece piece = square.getPiece();
-                if (piece instanceof King && piece.isWhite() == isWhite) {
-                    return square;
-                }
+        for (int k = 0; k < board.activePieceCount; k++) {
+            int pos = board.activePieceCoords[k];
+            int r = pos / 8;
+            int c = pos % 8;
+            Square square = board.getSquare(r, c);
+            Piece piece = square.getPiece();
+            if (piece instanceof King && piece.isWhite() == isWhite) {
+                return square;
             }
         }
         return null;
@@ -28,14 +29,15 @@ public class MoveHelper {
         }
 
         // Loop through all squares to find opposing pieces that can capture the King
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                Square square = board.getSquare(r, c);
-                Piece piece = square.getPiece();
-                if (piece != null && piece.isWhite() != isWhite) {
-                    if (piece.isValidMove(board, square, kingSquare)) {
-                        return true;
-                    }
+        for (int k = 0; k < board.activePieceCount; k++) {
+            int pos = board.activePieceCoords[k];
+            int r = pos / 8;
+            int c = pos % 8;
+            Square square = board.getSquare(r, c);
+            Piece piece = square.getPiece();
+            if (piece != null && piece.isWhite() != isWhite) {
+                if (piece.isValidMove(board, square, kingSquare)) {
+                    return true;
                 }
             }
         }
@@ -49,9 +51,17 @@ public class MoveHelper {
         Piece movingPiece = start.getPiece();
         Piece capturedPiece = end.getPiece();
 
+        int startPos = start.getRow() * 8 + start.getCol();
+        int endPos = end.getRow() * 8 + end.getCol();
+
         // 1. Temporarily make the move
         end.setPiece(movingPiece);
         start.setPiece(null);
+
+        board.removeActivePiece(startPos);
+        if (capturedPiece == null) {
+            board.addActivePiece(endPos);
+        }
 
         // 2. Evaluate if the King is in check
         boolean inCheck = isInCheck(board, isWhite);
@@ -59,6 +69,11 @@ public class MoveHelper {
         // 3. Revert the move
         start.setPiece(movingPiece);
         end.setPiece(capturedPiece);
+
+        if (capturedPiece == null) {
+            board.removeActivePiece(endPos);
+        }
+        board.addActivePiece(startPos);
 
         return inCheck;
     }
@@ -68,21 +83,22 @@ public class MoveHelper {
      * A move is legal if the piece can make the move and it does not leave the King in check.
      */
     public static boolean hasLegalMoves(Board board, boolean isWhite) {
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                Square startSquare = board.getSquare(r, c);
-                Piece piece = startSquare.getPiece();
+        for (int k = 0; k < board.activePieceCount; k++) {
+            int pos = board.activePieceCoords[k];
+            int r = pos / 8;
+            int c = pos % 8;
+            Square startSquare = board.getSquare(r, c);
+            Piece piece = startSquare.getPiece();
 
-                if (piece != null && piece.isWhite() == isWhite) {
-                    // Check every possible destination square
-                    for (int tr = 0; tr < 8; tr++) {
-                        for (int tc = 0; tc < 8; tc++) {
-                            Square endSquare = board.getSquare(tr, tc);
+            if (piece != null && piece.isWhite() == isWhite) {
+                // Check every possible destination square
+                for (int tr = 0; tr < 8; tr++) {
+                    for (int tc = 0; tc < 8; tc++) {
+                        Square endSquare = board.getSquare(tr, tc);
 
-                            if (piece.isValidMove(board, startSquare, endSquare)) {
-                                if (!willMoveResultInCheck(board, startSquare, endSquare, isWhite)) {
-                                    return true; // Found a legal move!
-                                }
+                        if (piece.isValidMove(board, startSquare, endSquare)) {
+                            if (!willMoveResultInCheck(board, startSquare, endSquare, isWhite)) {
+                                return true; // Found a legal move!
                             }
                         }
                     }

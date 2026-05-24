@@ -9,13 +9,15 @@ public class BeginnerBot implements ChessBot{
 private List<Move> getAllLegalMoves(Board board, boolean isWhite){
 // find all possible moves at the current state
     List<Move> moves = new ArrayList<>();
-    for (int i = 0 ; i < 8 ; ++i){
-        for (int j = 0 ; j < 8 ;++j){
-            Square startSquare = board.getSquare(i, j);
-            Piece piece = startSquare.getPiece();
+    for (int k = 0; k < board.activePieceCount; k++){
+        int pos = board.activePieceCoords[k];
+        int i = pos / 8;
+        int j = pos % 8;
+        Square startSquare = board.getSquare(i, j);
+        Piece piece = startSquare.getPiece();
 
-            if (piece != null && piece.isWhite() == isWhite){
-                // this is a piece
+        if (piece != null && piece.isWhite() == isWhite){
+            // this is a piece
                 // check everysquare on the board to see if it can go there 
                 for (int i_final = 0; i_final < 8 ; ++i_final){
                     for (int j_final = 0; j_final < 8 ; ++j_final){
@@ -38,7 +40,6 @@ private List<Move> getAllLegalMoves(Board board, boolean isWhite){
                 }
             }
         }
-    }
     return moves;
 }
 
@@ -48,22 +49,23 @@ private List<Move> getAllLegalMoves(Board board, boolean isWhite){
      */
     private int evaluateBoard(Board board) {
         int score = 0;
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                Piece piece = board.getSquare(r, c).getPiece();
-                if (piece != null) {
-                    int pieceValue = 0;
-                    if (piece instanceof Pawn) pieceValue = 100;
-                    else if (piece instanceof Knight) pieceValue = 300;
-                    else if (piece instanceof Bishop) pieceValue = 300;
-                    else if (piece instanceof Rook) pieceValue = 500;
-                    else if (piece instanceof Queen) pieceValue = 900;
-                    // Add for White, subtract for Black
-                    if (piece.isWhite()) {
-                        score += pieceValue;
-                    } else {
-                        score -= pieceValue;
-                    }
+        for (int k = 0; k < board.activePieceCount; k++) {
+            int pos = board.activePieceCoords[k];
+            int r = pos / 8;
+            int c = pos % 8;
+            Piece piece = board.getSquare(r, c).getPiece();
+            if (piece != null) {
+                int pieceValue = 0;
+                if (piece instanceof Pawn) pieceValue = 100;
+                else if (piece instanceof Knight) pieceValue = 300;
+                else if (piece instanceof Bishop) pieceValue = 300;
+                else if (piece instanceof Rook) pieceValue = 500;
+                else if (piece instanceof Queen) pieceValue = 900;
+                // Add for White, subtract for Black
+                if (piece.isWhite()) {
+                    score += pieceValue;
+                } else {
+                    score -= pieceValue;
                 }
             }
         }
@@ -97,6 +99,9 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
 
             boolean originalMovedFlag = movingPiece.isMoved(); // update -> store original isMoved flag
 
+            int startPos = move.startRow * 8 + move.startCol;
+            int endPos = move.endRow * 8 + move.endCol;
+
             // update -> handle pawn promotion during simulation
             if (move.isPromotion && movingPiece instanceof Pawn) {
                 end.setPiece(new Queen(movingPiece.isWhite()));
@@ -107,6 +112,11 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
             }
             movingPiece.setMoved(true); // update -> set isMoved flag for simulation
 
+            board.removeActivePiece(startPos);
+            if (move.capturedPiece == null) {
+                board.addActivePiece(endPos);
+            }
+
             // recurse minimax
             int eval = minimax(board,depth - 1, alpha,beta,false);
 
@@ -114,6 +124,11 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
             movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
             start.setPiece(movingPiece);
             end.setPiece(move.capturedPiece);
+            
+            if (move.capturedPiece == null) {
+                board.removeActivePiece(endPos);
+            }
+            board.addActivePiece(startPos);
             
             // alpha-beta prunning
             // from left to right, child inherits from parents,
@@ -137,6 +152,9 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
 
                 boolean originalMovedFlag = movingPiece.isMoved(); // update -> store original isMoved flag
 
+                int startPos = move.startRow * 8 + move.startCol;
+                int endPos = move.endRow * 8 + move.endCol;
+
                 // update -> handle pawn promotion during simulation
                 if (move.isPromotion && movingPiece instanceof Pawn) {
                     end.setPiece(new Queen(movingPiece.isWhite()));
@@ -147,12 +165,23 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
                 }
                 movingPiece.setMoved(true); // update -> set isMoved flag for simulation
 
+                board.removeActivePiece(startPos);
+                if (move.capturedPiece == null) {
+                    board.addActivePiece(endPos);
+                }
+
                 // Recurse
                 int eval = minimax(board, depth - 1, alpha, beta, true);
+                
                 // Undo
                 movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
+
+                if (move.capturedPiece == null) {
+                    board.removeActivePiece(endPos);
+                }
+                board.addActivePiece(startPos);
                 // Alpha-Beta Pruning
                 minEval = Math.min(minEval, eval);
                 beta = Math.min(beta, eval);
@@ -176,6 +205,9 @@ public Move getBestMove(Board board, boolean isWhite){
 
             boolean originalMovedFlag = movingPiece.isMoved(); // update -> store original isMoved flag
 
+            int startPos = move.startRow * 8 + move.startCol;
+            int endPos = move.endRow * 8 + move.endCol;
+
             // 2. MAKE the move (Simulate)
             // update -> handle pawn promotion during simulation
             if (move.isPromotion && movingPiece instanceof Pawn) {
@@ -187,12 +219,23 @@ public Move getBestMove(Board board, boolean isWhite){
             }
             movingPiece.setMoved(true); // update -> set isMoved flag for simulation
 
+            board.removeActivePiece(startPos);
+            if (move.capturedPiece == null) {
+                board.addActivePiece(endPos);
+            }
+
             // 3. Dig deeper into the tree
             int score = minimax(board, SEARCH_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, !isWhite);
+            
             // 4. UNDO the move (Restore the exact state)
             movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
             start.setPiece(movingPiece);
             end.setPiece(move.capturedPiece);
+
+            if (move.capturedPiece == null) {
+                board.removeActivePiece(endPos);
+            }
+            board.addActivePiece(startPos);
             // 5. Check if this is the best move so far
             if (isWhite) {
                 if (score > bestScore) {

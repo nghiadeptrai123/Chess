@@ -85,9 +85,7 @@ public class ChessBoardUI extends JFrame {
         }
     }
 
-    // ---------------------------------------------------------------
-    // Inner panel — all painting happens here
-    // ---------------------------------------------------------------
+    // Inner panel where all painting happens
     class BoardPanel extends JPanel {
 
         BoardPanel() {
@@ -314,8 +312,16 @@ public class ChessBoardUI extends JFrame {
                     boardPanel.repaint();
                     return;
                 } else {
+                    Piece capturedPiece = endSquare.getPiece();
+
                     endSquare.setPiece(piece);
                     startSquare.setPiece(null);
+
+                    board.removeActivePiece(dragFromRow * 8 + dragFromCol);
+                    if (capturedPiece == null) {
+                        board.addActivePiece(dragToRow * 8 + dragToCol);
+                    }
+
                     // implementing Castling: move the rook to the square the king passed through
                     if (piece instanceof King) {
                         King king = (King) piece;
@@ -328,6 +334,10 @@ public class ChessBoardUI extends JFrame {
                             Piece rook = rookFrom.getPiece();
                             rookTo.setPiece(rook);
                             rookFrom.setPiece(null);
+
+                            board.removeActivePiece(dragToRow * 8 + rookFromCol);
+                            board.addActivePiece(dragToRow * 8 + rookToCol); // Castling rook move never captures
+
                             if (rook != null)
                                 rook.setMoved(true);
                         }
@@ -426,9 +436,17 @@ public class ChessBoardUI extends JFrame {
         Square startSquare = board.getSquare(move.startRow, move.startCol);
         Square endSquare = board.getSquare(move.endRow, move.endCol);
         Piece piece = startSquare.getPiece();
+        Piece capturedPiece = endSquare.getPiece();
+
         // 1. Physically move the piece on the board
         endSquare.setPiece(piece);
         startSquare.setPiece(null);
+
+        board.removeActivePiece(move.startRow * 8 + move.startCol);
+        if (capturedPiece == null) {
+            board.addActivePiece(move.endRow * 8 + move.endCol);
+        }
+
         piece.setMoved(true);
         // update -> handle castling: if king moved 2 squares, also move the rook
         if (piece instanceof King && Math.abs(move.startCol - move.endCol) == 2) {
@@ -440,6 +458,10 @@ public class ChessBoardUI extends JFrame {
             if (rook != null) {
                 rookTo.setPiece(rook);
                 rookFrom.setPiece(null);
+
+                board.removeActivePiece(move.endRow * 8 + rookFromCol);
+                board.addActivePiece(move.endRow * 8 + rookToCol); // Castling never captures
+
                 rook.setMoved(true);
             }
         }
@@ -590,6 +612,14 @@ public class ChessBoardUI extends JFrame {
         for (int col = 0; col < 8; col++) {
             board.getSquare(1, col).setPiece(new Pawn(true)); // White Pawns on row 1
             board.getSquare(6, col).setPiece(new Pawn(false)); // Black Pawns on row 6
+        }
+
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                if (board.getSquare(r, c).getPiece() != null) {
+                    board.addActivePiece(r * 8 + c);
+                }
+            }
         }
 
         new ChessBoardUI(board, gc);
