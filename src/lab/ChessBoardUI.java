@@ -317,6 +317,12 @@ public class ChessBoardUI extends JFrame {
                     endSquare.setPiece(piece);
                     startSquare.setPiece(null);
 
+                    // Update King variable if King moved
+                    if (piece instanceof King) {
+                        if (piece.isWhite()) board.whiteKingSquare = endSquare;
+                        else board.blackKingSquare = endSquare;
+                    }
+
                     board.removeActivePiece(dragFromRow * 8 + dragFromCol);
                     if (capturedPiece == null) {
                         board.addActivePiece(dragToRow * 8 + dragToCol);
@@ -441,6 +447,12 @@ public class ChessBoardUI extends JFrame {
         // 1. Physically move the piece on the board
         endSquare.setPiece(piece);
         startSquare.setPiece(null);
+
+        // Update King variable if King moved
+        if (piece instanceof King) {
+            if (piece.isWhite()) board.whiteKingSquare = endSquare;
+            else board.blackKingSquare = endSquare;
+        }
 
         board.removeActivePiece(move.startRow * 8 + move.startCol);
         if (capturedPiece == null) {
@@ -616,8 +628,13 @@ public class ChessBoardUI extends JFrame {
 
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
-                if (board.getSquare(r, c).getPiece() != null) {
+                Piece p = board.getSquare(r, c).getPiece();
+                if (p != null) {
                     board.addActivePiece(r * 8 + c);
+                    if (p instanceof King) {
+                        if (p.isWhite()) board.whiteKingSquare = board.getSquare(r, c);
+                        else board.blackKingSquare = board.getSquare(r, c);
+                    }
                 }
             }
         }

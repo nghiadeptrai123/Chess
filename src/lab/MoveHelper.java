@@ -58,9 +58,10 @@ public class MoveHelper {
         end.setPiece(movingPiece);
         start.setPiece(null);
 
-        board.removeActivePiece(startPos);
-        if (capturedPiece == null) {
-            board.addActivePiece(endPos);
+        // Update king square if king moves
+        if (movingPiece instanceof King) {
+            if (isWhite) board.whiteKingSquare = end;
+            else board.blackKingSquare = end;
         }
 
         // 2. Evaluate if the King is in check
@@ -70,10 +71,11 @@ public class MoveHelper {
         start.setPiece(movingPiece);
         end.setPiece(capturedPiece);
 
-        if (capturedPiece == null) {
-            board.removeActivePiece(endPos);
+        // Revert king square if king moved
+        if (movingPiece instanceof King) {
+            if (isWhite) board.whiteKingSquare = start;
+            else board.blackKingSquare = start;
         }
-        board.addActivePiece(startPos);
 
         return inCheck;
     }

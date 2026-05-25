@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AmateurBot implements ChessBot {
-    private static final int SEARCH_DEPTH = 6;
+    private static final int SEARCH_DEPTH = 7;
     // depth 5 for amateur
 
     private List<Move> getAllLegalMoves(Board board, boolean isWhite) {
@@ -50,30 +50,36 @@ public class AmateurBot implements ChessBot {
      * Returns the material value of a piece.
      */
     private int getPieceValue(Piece piece) {
-        if (piece instanceof Queen)  return 900;
-        if (piece instanceof Rook)   return 500;
-        if (piece instanceof Bishop) return 300;
-        if (piece instanceof Knight) return 300;
-        if (piece instanceof Pawn)   return 100;
+        if (piece instanceof Queen)
+            return 900;
+        if (piece instanceof Rook)
+            return 500;
+        if (piece instanceof Bishop)
+            return 300;
+        if (piece instanceof Knight)
+            return 300;
+        if (piece instanceof Pawn)
+            return 100;
         return 0; // King
     }
 
-    private int scoreMove(Board board, Move move){
+    private int scoreMove(Board board, Move move) {
         // this use to calculate the score of each move in current state
-        // we will use this to sort legal moves in order to facilitate the alpha-beta prunning
+        // we will use this to sort legal moves in order to facilitate the alpha-beta
+        // prunning
         int score = 0;
         Piece Attacker = board.getSquare(move.startRow, move.startCol).getPiece();
-        if (move.isPromotion){
+        if (move.isPromotion) {
             score = score + 8000;
-        }else {
-            if(move.capturedPiece != null){
-               int Attacker_val = getPieceValue(Attacker);
-               int Victim_val = getPieceValue(move.capturedPiece);
-               score = score + 10 * Victim_val - Attacker_val;
+        } else {
+            if (move.capturedPiece != null) {
+                int Attacker_val = getPieceValue(Attacker);
+                int Victim_val = getPieceValue(move.capturedPiece);
+                score = score + 10 * Victim_val - Attacker_val;
             }
         }
         return score;
-        // quiet move -> score = 0 
+        // quiet move -> score = 0
     }
 
     /**
@@ -146,6 +152,14 @@ public class AmateurBot implements ChessBot {
                     board.addActivePiece(endPos);
                 }
 
+                // Update king square if king moves
+                if (movingPiece instanceof King) {
+                    if (movingPiece.isWhite())
+                        board.whiteKingSquare = end;
+                    else
+                        board.blackKingSquare = end;
+                }
+
                 // recurse minimax
                 int eval = minimax(board, depth - 1, alpha, beta, false);
 
@@ -158,6 +172,14 @@ public class AmateurBot implements ChessBot {
                     board.removeActivePiece(endPos);
                 }
                 board.addActivePiece(startPos);
+
+                // Revert king square if king moved
+                if (movingPiece instanceof King) {
+                    if (movingPiece.isWhite())
+                        board.whiteKingSquare = start;
+                    else
+                        board.blackKingSquare = start;
+                }
 
                 // alpha-beta prunning
                 // from left to right, child inherits from parents,
@@ -200,6 +222,14 @@ public class AmateurBot implements ChessBot {
                     board.addActivePiece(endPos);
                 }
 
+                // Update king square if king moves
+                if (movingPiece instanceof King) {
+                    if (movingPiece.isWhite())
+                        board.whiteKingSquare = end;
+                    else
+                        board.blackKingSquare = end;
+                }
+
                 // Recurse
                 int eval = minimax(board, depth - 1, alpha, beta, true);
 
@@ -212,6 +242,14 @@ public class AmateurBot implements ChessBot {
                     board.removeActivePiece(endPos);
                 }
                 board.addActivePiece(startPos);
+
+                // Revert king square if king moved
+                if (movingPiece instanceof King) {
+                    if (movingPiece.isWhite())
+                        board.whiteKingSquare = start;
+                    else
+                        board.blackKingSquare = start;
+                }
                 // Alpha-Beta Pruning
                 minEval = Math.min(minEval, eval);
                 beta = Math.min(beta, eval);
@@ -257,6 +295,14 @@ public class AmateurBot implements ChessBot {
                 board.addActivePiece(endPos);
             }
 
+            // Update king square if king moves
+            if (movingPiece instanceof King) {
+                if (movingPiece.isWhite())
+                    board.whiteKingSquare = end;
+                else
+                    board.blackKingSquare = end;
+            }
+
             // 3. Dig deeper into the tree
             int score = minimax(board, SEARCH_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, !isWhite);
 
@@ -269,6 +315,14 @@ public class AmateurBot implements ChessBot {
                 board.removeActivePiece(endPos);
             }
             board.addActivePiece(startPos);
+
+            // Revert king square if king moved
+            if (movingPiece instanceof King) {
+                if (movingPiece.isWhite())
+                    board.whiteKingSquare = start;
+                else
+                    board.blackKingSquare = start;
+            }
             // 5. Check if this is the best move so far
             if (isWhite) {
                 if (score > bestScore) {

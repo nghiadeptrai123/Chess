@@ -9,6 +9,9 @@ public class Board {
 	public int[] boardToIndex = new int[64];
 	public int activePieceCount = 0;
 
+	public Square whiteKingSquare;
+	public Square blackKingSquare;
+
 	public void addActivePiece(int coord) {
 		activePieceCoords[activePieceCount] = coord;
 		boardToIndex[coord] = activePieceCount;
@@ -36,20 +39,7 @@ public class Board {
 		return board[row][col];
 	}
 	public Square findKing(boolean isWhite){
-		// tim vi tri cua vua (dung de lam tinh nang checkmate)
-		for (int k = 0; k < activePieceCount; k++){
-			int pos = activePieceCoords[k];
-			int r = pos / 8;
-			int c = pos % 8;
-			Square square = board[r][c];
-			Piece piece = square.getPiece();
-			if (piece instanceof King && piece.isWhite() == isWhite){
-				// tim thay vua den hoac trang
-				return square;
-			}
-		}
-		return null;
-		// k tim thay vua
+		return isWhite ? whiteKingSquare : blackKingSquare;
 	}
 
 	// check detection
@@ -87,16 +77,14 @@ public boolean willMoveResultInCheck(Square start, Square end, boolean isWhite){
 	Piece movingPiece = start.getPiece();
 	Piece capturedPiece = end.getPiece();
 	
-	int startPos = start.getRow() * 8 + start.getCol();
-	int endPos = end.getRow() * 8 + end.getCol();
-	
 	// temporary simulate the state ( assuming it is a valid move)
 	end.setPiece(movingPiece);
 	start.setPiece(null);
-	
-	removeActivePiece(startPos);
-	if (capturedPiece == null) {
-		addActivePiece(endPos);
+
+	// Update king square if king moves
+	if (movingPiece instanceof King) {
+		if (isWhite) whiteKingSquare = end;
+		else blackKingSquare = end;
 	}
 	
 	boolean flag = isChecked(isWhite);
@@ -104,10 +92,11 @@ public boolean willMoveResultInCheck(Square start, Square end, boolean isWhite){
 	start.setPiece(movingPiece);
 	end.setPiece(capturedPiece);
 	
-	if (capturedPiece == null) {
-		removeActivePiece(endPos);
+	// Revert king square if king moved
+	if (movingPiece instanceof King) {
+		if (isWhite) whiteKingSquare = start;
+		else blackKingSquare = start;
 	}
-	addActivePiece(startPos);
 
 	return flag;
 }
@@ -117,10 +106,8 @@ public boolean willMoveResultInCheck(Square start, Square end, boolean isWhite){
 
 	public boolean hasLegalMoves(boolean isWhite){
 		// try to scan all of player's pieces and all square to see if they have at least one move that does not leave their King in check
-		int[] pieces = new int[activePieceCount];
-		System.arraycopy(activePieceCoords, 0, pieces, 0, activePieceCount);
-		for (int k = 0; k < pieces.length; k++){
-			int pos = pieces[k];
+		for (int k = 0; k < activePieceCount; k++){
+			int pos = activePieceCoords[k];
 			int r = pos / 8;
 			int c = pos % 8;
 			Square startSquare = board[r][c];

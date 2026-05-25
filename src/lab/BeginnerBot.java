@@ -145,6 +145,12 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
                 board.addActivePiece(endPos);
             }
 
+            // Update king square if king moves
+            if (movingPiece instanceof King) {
+                if (movingPiece.isWhite()) board.whiteKingSquare = end;
+                else board.blackKingSquare = end;
+            }
+
             // recurse minimax
             int eval = minimax(board,depth - 1, alpha,beta,false);
 
@@ -157,6 +163,12 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
                 board.removeActivePiece(endPos);
             }
             board.addActivePiece(startPos);
+
+            // Revert king square if king moved
+            if (movingPiece instanceof King) {
+                if (movingPiece.isWhite()) board.whiteKingSquare = start;
+                else board.blackKingSquare = start;
+            }
             
             // alpha-beta prunning
             // from left to right, child inherits from parents,
@@ -198,6 +210,12 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
                     board.addActivePiece(endPos);
                 }
 
+                // Update king square if king moves
+                if (movingPiece instanceof King) {
+                    if (movingPiece.isWhite()) board.whiteKingSquare = end;
+                    else board.blackKingSquare = end;
+                }
+
                 // Recurse
                 int eval = minimax(board, depth - 1, alpha, beta, true);
                 
@@ -210,6 +228,12 @@ private int minimax(Board board, int depth, int alpha, int beta, boolean isMax){
                     board.removeActivePiece(endPos);
                 }
                 board.addActivePiece(startPos);
+
+                // Revert king square if king moved
+                if (movingPiece instanceof King) {
+                    if (movingPiece.isWhite()) board.whiteKingSquare = start;
+                    else board.blackKingSquare = start;
+                }
                 // Alpha-Beta Pruning
                 minEval = Math.min(minEval, eval);
                 beta = Math.min(beta, eval);
@@ -253,6 +277,12 @@ public Move getBestMove(Board board, boolean isWhite){
                 board.addActivePiece(endPos);
             }
 
+            // Update king square if king moves
+            if (movingPiece instanceof King) {
+                if (movingPiece.isWhite()) board.whiteKingSquare = end;
+                else board.blackKingSquare = end;
+            }
+
             // 3. Dig deeper into the tree
             int score = minimax(board, SEARCH_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, !isWhite);
             
@@ -265,6 +295,12 @@ public Move getBestMove(Board board, boolean isWhite){
                 board.removeActivePiece(endPos);
             }
             board.addActivePiece(startPos);
+
+            // Revert king square if king moved
+            if (movingPiece instanceof King) {
+                if (movingPiece.isWhite()) board.whiteKingSquare = start;
+                else board.blackKingSquare = start;
+            }
             // 5. Check if this is the best move so far
             if (isWhite) {
                 if (score > bestScore) {
