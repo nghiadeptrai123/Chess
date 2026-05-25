@@ -108,8 +108,25 @@ public class ChessBoardUI extends JFrame {
             ChessBoardUI.main(new String[]{});
         });
 
-        JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 0, 5));
+        JButton surrenderButton = new JButton("Surrender");
+        surrenderButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+        surrenderButton.addActionListener(e -> {
+            if (gameOver) return;
+            gameOver = true;
+            String message;
+            if (gameController.isSinglePlayer) {
+                message = "You surrendered! The Bot wins!";
+            } else {
+                String loser = gameController.isWhiteTurn ? "White" : "Black";
+                String winner = gameController.isWhiteTurn ? "Black" : "White";
+                message = loser + " surrendered! " + winner + " wins!";
+            }
+            promptNewGame(message);
+        });
+
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 0, 5));
         buttonPanel.add(undoButton);
+        buttonPanel.add(surrenderButton);
         buttonPanel.add(newGameButton);
         sidePanel.add(buttonPanel, BorderLayout.SOUTH);
 
