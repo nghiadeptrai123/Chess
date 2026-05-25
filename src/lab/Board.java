@@ -115,35 +115,37 @@ public boolean willMoveResultInCheck(Square start, Square end, boolean isWhite){
 // checkmate (win) stalemate (draw) condition
 // -> 	we have to check if the next player has any legal moves left
 
-public boolean hasLegalMoves(boolean isWhite){
-	// try to scan all of player's pieces and all square to see if they have at least one move that does not leave their King in check
-	for (int k = 0; k < activePieceCount; k++){
-		int pos = activePieceCoords[k];
-		int r = pos / 8;
-		int c = pos % 8;
-		Square startSquare = board[r][c];
-		// start
-		Piece piece = startSquare.getPiece();
-		// check if the piece belongs to the current player
-		if (piece != null && piece.isWhite()==isWhite){
-			// travrrrse through all position to check if there exists at least 1 posoiton not lead to check state
-			for (int end_r = 0 ; end_r < 8 ;++end_r){
-				for (int end_c = 0 ; end_c < 8 ;++end_c){
-					Square endSquare = board[end_r][end_c];
-					// destination
-					if (piece.isValidMove(this, startSquare, endSquare)){
-						// if you can move, move it and check if it in check or not
-						if (willMoveResultInCheck(startSquare, endSquare, isWhite)==false){
-							// there is at least 1 valid position not lead to check state
-							return true;
+	public boolean hasLegalMoves(boolean isWhite){
+		// try to scan all of player's pieces and all square to see if they have at least one move that does not leave their King in check
+		int[] pieces = new int[activePieceCount];
+		System.arraycopy(activePieceCoords, 0, pieces, 0, activePieceCount);
+		for (int k = 0; k < pieces.length; k++){
+			int pos = pieces[k];
+			int r = pos / 8;
+			int c = pos % 8;
+			Square startSquare = board[r][c];
+			// start
+			Piece piece = startSquare.getPiece();
+			// check if the piece belongs to the current player
+			if (piece != null && piece.isWhite()==isWhite){
+				// travrrrse through all position to check if there exists at least 1 posoiton not lead to check state
+				for (int end_r = 0 ; end_r < 8 ;++end_r){
+					for (int end_c = 0 ; end_c < 8 ;++end_c){
+						Square endSquare = board[end_r][end_c];
+						// destination
+						if (piece.isValidMove(this, startSquare, endSquare)){
+							// if you can move, move it and check if it in check or not
+							if (willMoveResultInCheck(startSquare, endSquare, isWhite)==false){
+								// there is at least 1 valid position not lead to check state
+								return true;
+							}
 						}
 					}
 				}
 			}
 		}
+		return false;
 	}
-	return false;
-}
 
 public boolean isCheckmate(boolean isWhite){
 	// check if the current player is in checkmate or not (lost)

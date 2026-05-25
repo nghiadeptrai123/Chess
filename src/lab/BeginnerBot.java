@@ -9,8 +9,10 @@ public class BeginnerBot implements ChessBot{
 private List<Move> getAllLegalMoves(Board board, boolean isWhite){
 // find all possible moves at the current state
     List<Move> moves = new ArrayList<>();
-    for (int k = 0; k < board.activePieceCount; k++){
-        int pos = board.activePieceCoords[k];
+    int[] pieces = new int[board.activePieceCount];
+    System.arraycopy(board.activePieceCoords, 0, pieces, 0, board.activePieceCount);
+    for (int k = 0; k < pieces.length; k++){
+        int pos = pieces[k];
         int i = pos / 8;
         int j = pos % 8;
         Square startSquare = board.getSquare(i, j);

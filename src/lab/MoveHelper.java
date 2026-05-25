@@ -83,8 +83,10 @@ public class MoveHelper {
      * A move is legal if the piece can make the move and it does not leave the King in check.
      */
     public static boolean hasLegalMoves(Board board, boolean isWhite) {
-        for (int k = 0; k < board.activePieceCount; k++) {
-            int pos = board.activePieceCoords[k];
+        int[] pieces = new int[board.activePieceCount];
+        System.arraycopy(board.activePieceCoords, 0, pieces, 0, board.activePieceCount);
+        for (int k = 0; k < pieces.length; k++) {
+            int pos = pieces[k];
             int r = pos / 8;
             int c = pos % 8;
             Square startSquare = board.getSquare(r, c);
