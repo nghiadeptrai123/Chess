@@ -32,4 +32,11 @@ public class Bishop extends Piece {
 
         return true;
     }
+
+    @Override
+    public Piece clonePiece() {
+        Bishop clone = new Bishop(this.isWhite());
+        clone.setMoved(this.isMoved());
+        return clone;
+    }
 }

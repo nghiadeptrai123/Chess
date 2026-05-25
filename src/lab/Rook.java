@@ -30,4 +30,11 @@ public class Rook extends Piece {
 
         return true;
     }
+
+    @Override
+    public Piece clonePiece() {
+        Rook clone = new Rook(this.isWhite());
+        clone.setMoved(this.isMoved());
+        return clone;
+    }
 }

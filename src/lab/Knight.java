@@ -15,4 +15,11 @@ public class Knight extends Piece {
 
         return (dx == 2 && dy == 1) || (dx == 1 && dy == 2);
     }
+
+    @Override
+    public Piece clonePiece() {
+        Knight clone = new Knight(this.isWhite());
+        clone.setMoved(this.isMoved());
+        return clone;
+    }
 }

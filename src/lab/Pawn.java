@@ -23,4 +23,11 @@ public class Pawn extends Piece {
         if (dy == 1 && dx == direction && end.getPiece() != null && end.getPiece().isWhite() != this.isWhite()) return true;
         return false;
     }
+
+    @Override
+    public Piece clonePiece() {
+        Pawn clone = new Pawn(this.isWhite());
+        clone.setMoved(this.isMoved());
+        return clone;
+    }
 }

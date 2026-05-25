@@ -17,4 +17,6 @@ public abstract class Piece {
 		this.isMoved = moved; // setMoved after a succesfully moved.
 	}
 	public abstract boolean isValidMove(Board board, Square start, Square end);
+	
+	public abstract Piece clonePiece();
 }

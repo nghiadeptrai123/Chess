@@ -33,5 +33,12 @@ public class Queen extends Piece {
         return rookLogic.isValidMove(board, start, end)
                 || bishopLogic.isValidMove(board, start, end);
     }
+
+    @Override
+    public Piece clonePiece() {
+        Queen clone = new Queen(this.isWhite());
+        clone.setMoved(this.isMoved());
+        return clone;
+    }
 }
 

@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import javax.imageio.ImageIO;
 
 public class ChessBoardUI extends JFrame {
@@ -32,6 +33,24 @@ public class ChessBoardUI extends JFrame {
     // update -> frozen snapshot of piece positions taken before the bot starts
     // calculating
     private Piece[][] pieceSnapshot = new Piece[8][8];
+
+    // Logging state
+    private JTextArea moveLogArea;
+    private int fullMoveCount = 1;
+
+    // Undo State
+    class GameState {
+        Square[][] boardSquares = new Square[8][8];
+        int[] activePieceCoords = new int[33];
+        int[] boardToIndex = new int[64];
+        int activePieceCount;
+        int whiteKingRow, whiteKingCol;
+        int blackKingRow, blackKingCol;
+        boolean isWhiteTurn;
+        String moveLogText;
+        int fullMoveCount;
+    }
+    private Stack<GameState> history = new Stack<>();
 
     // Piece images: key = "White King", "Black Pawn", etc.
     private Map<String, BufferedImage> pieceImages = new HashMap<>();
@@ -59,7 +78,32 @@ public class ChessBoardUI extends JFrame {
         boardPanel.addMouseListener(mouseListener);
         boardPanel.addMouseMotionListener(mouseListener);
 
-        add(boardPanel);
+        // UI Layout
+        setLayout(new BorderLayout());
+        add(boardPanel, BorderLayout.CENTER);
+
+        // Move Log Panel
+        JPanel sidePanel = new JPanel(new BorderLayout());
+        sidePanel.setPreferredSize(new Dimension(300, TILE_SIZE * BOARD_SIZE));
+        sidePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel logTitle = new JLabel("Move Log", SwingConstants.CENTER);
+        logTitle.setFont(new Font("SansSerif", Font.BOLD, 18));
+        sidePanel.add(logTitle, BorderLayout.NORTH);
+
+        moveLogArea = new JTextArea();
+        moveLogArea.setEditable(false);
+        moveLogArea.setFont(new Font("Monospaced", Font.PLAIN, 16));
+        JScrollPane scrollPane = new JScrollPane(moveLogArea);
+        sidePanel.add(scrollPane, BorderLayout.CENTER);
+
+        JButton undoButton = new JButton("Undo Move");
+        undoButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+        undoButton.addActionListener(e -> undo());
+        sidePanel.add(undoButton, BorderLayout.SOUTH);
+
+        add(sidePanel, BorderLayout.EAST);
+
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
@@ -157,6 +201,20 @@ public class ChessBoardUI extends JFrame {
                     if (row == dragFromRow && col == dragFromCol) {
                         g.setColor(new Color(100, 200, 100, 120));
                         g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    }
+
+                    // Draw Rank Coordinates (8 to 1) on the left edge
+                    if (col == 0) {
+                        g.setColor(isLight ? new Color(181, 136, 99) : new Color(240, 217, 181));
+                        g.setFont(new Font("SansSerif", Font.BOLD, 14));
+                        g.drawString(String.valueOf(8 - row), 5, row * TILE_SIZE + 20);
+                    }
+
+                    // Draw File Coordinates (a to h) on the bottom edge
+                    if (row == 7) {
+                        g.setColor(isLight ? new Color(181, 136, 99) : new Color(240, 217, 181));
+                        g.setFont(new Font("SansSerif", Font.BOLD, 14));
+                        g.drawString(String.valueOf((char) ('a' + col)), col * TILE_SIZE + TILE_SIZE - 15, row * TILE_SIZE + TILE_SIZE - 5);
                     }
                 }
             }
@@ -259,6 +317,114 @@ public class ChessBoardUI extends JFrame {
         return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
     }
 
+    /** Helper to get chess notation string for logging */
+    private String getChessNotation(Square start, Square end, Piece movingPiece, Piece capturedPiece, boolean isPromotion) {
+        String pieceLetter = "";
+        if (movingPiece instanceof Knight) pieceLetter = "N";
+        else if (!(movingPiece instanceof Pawn)) pieceLetter = movingPiece.getClass().getSimpleName().substring(0, 1);
+
+        String dest = "" + (char) ('a' + end.getCol()) + (8 - end.getRow());
+        
+        String capture = (capturedPiece != null) ? "x" : "";
+        if (movingPiece instanceof Pawn && capturedPiece != null) {
+            capture = "" + (char)('a' + start.getCol()) + "x";
+        }
+
+        String promotion = isPromotion ? "=Q" : ""; // basic assumption for simplicity
+
+        // handle castling visually
+        if (movingPiece instanceof King && Math.abs(start.getCol() - end.getCol()) == 2) {
+            if (end.getCol() == 6) return "O-O";
+            else return "O-O-O";
+        }
+
+        return pieceLetter + capture + dest + promotion;
+    }
+
+    private void logMove(String moveNotation, boolean isWhite) {
+        if (isWhite) {
+            moveLogArea.append(String.format("%-4d %-15s", fullMoveCount, moveNotation));
+        } else {
+            moveLogArea.append(String.format("%-15s\n", moveNotation));
+            fullMoveCount++;
+        }
+        moveLogArea.setCaretPosition(moveLogArea.getDocument().getLength());
+    }
+
+    private void saveState() {
+        GameState state = new GameState();
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                state.boardSquares[r][c] = new Square(board.getSquare(r, c).isWhite(), r, c);
+                Piece p = board.getSquare(r, c).getPiece();
+                if (p != null) {
+                    state.boardSquares[r][c].setPiece(p.clonePiece());
+                }
+            }
+        }
+        System.arraycopy(board.activePieceCoords, 0, state.activePieceCoords, 0, 33);
+        System.arraycopy(board.boardToIndex, 0, state.boardToIndex, 0, 64);
+        state.activePieceCount = board.activePieceCount;
+        if (board.whiteKingSquare != null) {
+            state.whiteKingRow = board.whiteKingSquare.getRow();
+            state.whiteKingCol = board.whiteKingSquare.getCol();
+        }
+        if (board.blackKingSquare != null) {
+            state.blackKingRow = board.blackKingSquare.getRow();
+            state.blackKingCol = board.blackKingSquare.getCol();
+        }
+        state.isWhiteTurn = gameController.isWhiteTurn;
+        state.moveLogText = moveLogArea.getText();
+        state.fullMoveCount = fullMoveCount;
+        history.push(state);
+    }
+
+    private void undo() {
+        if (history.isEmpty() || botThinking || gameOver) return;
+
+        // In single player, we want to pop 2 states (undo both Bot and Player)
+        // If there's only 1 state, we pop it (returning to before White's first move)
+        int popCount = (gameController.isSinglePlayer && history.size() > 1) ? 2 : 1;
+        
+        GameState state = null;
+        for (int i = 0; i < popCount; i++) {
+            state = history.pop();
+        }
+
+        // Restore state
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                board.getSquare(r, c).setPiece(state.boardSquares[r][c].getPiece());
+            }
+        }
+        System.arraycopy(state.activePieceCoords, 0, board.activePieceCoords, 0, 33);
+        System.arraycopy(state.boardToIndex, 0, board.boardToIndex, 0, 64);
+        board.activePieceCount = state.activePieceCount;
+        if (board.whiteKingSquare != null) board.whiteKingSquare = board.getSquare(state.whiteKingRow, state.whiteKingCol);
+        if (board.blackKingSquare != null) board.blackKingSquare = board.getSquare(state.blackKingRow, state.blackKingCol);
+        
+        gameController.isWhiteTurn = state.isWhiteTurn;
+        moveLogArea.setText(state.moveLogText);
+        fullMoveCount = state.fullMoveCount;
+
+        boardPanel.repaint();
+
+        // If we undid back to the Bot's turn, we must trigger the bot to think again
+        if (gameController.isSinglePlayer && gameController.isWhiteTurn) {
+            triggerBot();
+        }
+    }
+
+    private void triggerBot() {
+        takeBoardSnapshot();
+        botThinking = true;
+        new Thread(() -> {
+            Move bestMove = activeBot.getBestMove(board, true);
+            try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            javax.swing.SwingUtilities.invokeLater(() -> executeBotMove(bestMove));
+        }).start();
+    }
+
     /**
      * Called by MouseInputListener when the user presses on a square.
      * Records the source square and highlights it.
@@ -312,6 +478,8 @@ public class ChessBoardUI extends JFrame {
                     boardPanel.repaint();
                     return;
                 } else {
+                    saveState(); // Snapshot before modifying
+
                     Piece capturedPiece = endSquare.getPiece();
 
                     endSquare.setPiece(piece);
@@ -349,11 +517,13 @@ public class ChessBoardUI extends JFrame {
                         }
                     }
                     piece.setMoved(true);
+                    boolean isPromotion = false;
                     // implementing Pawn Promotion
                     if (piece instanceof Pawn) {
                         // white promtoe at row 7, black promote at row 0
                         int promotionRow = piece.isWhite() ? 7 : 0;
                         if (dragToRow == promotionRow) {
+                            isPromotion = true;
                             // go to promtionRow
                             String[] options = { "Queen", "Rock", "Bishop", "Knight" };
                             int choice = JOptionPane.showOptionDialog(this, "Choose a piece to promote to:",
@@ -378,6 +548,11 @@ public class ChessBoardUI extends JFrame {
                             endSquare.setPiece(promotedPiece);
                         }
                     }
+
+                    // Log the move before switching turns
+                    String notation = getChessNotation(startSquare, endSquare, piece, capturedPiece, isPromotion);
+                    logMove(notation, piece.isWhite());
+
                     gameController.switchTurn();
 
                     boolean nextPlayeriswhite = gameController.isWhiteTurn;
@@ -398,20 +573,7 @@ public class ChessBoardUI extends JFrame {
         }
         // --- NEW: Trigger the Bot's response ---
         if (gameController.isSinglePlayer && gameController.isWhiteTurn && !gameOver) {
-            takeBoardSnapshot(); // update -> freeze the board visually before bot starts
-            botThinking = true; // update -> lock input while bot calculates
-            new Thread(() -> {
-                Move bestMove = activeBot.getBestMove(board, true); // true = White
-                // update -> artificial delay so the bot move doesn't appear instantly
-                try {
-                    Thread.sleep(600);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                javax.swing.SwingUtilities.invokeLater(() -> {
-                    executeBotMove(bestMove);
-                });
-            }).start();
+            triggerBot();
         }
         // Reset drag state
         dragFromRow = -1;
@@ -443,6 +605,8 @@ public class ChessBoardUI extends JFrame {
         Square endSquare = board.getSquare(move.endRow, move.endCol);
         Piece piece = startSquare.getPiece();
         Piece capturedPiece = endSquare.getPiece();
+
+        saveState(); // Snapshot before modifying
 
         // 1. Physically move the piece on the board
         endSquare.setPiece(piece);
@@ -481,6 +645,11 @@ public class ChessBoardUI extends JFrame {
         if (move.isPromotion && piece instanceof Pawn) {
             endSquare.setPiece(new Queen(piece.isWhite()));
         }
+
+        // Log the move before switching turns
+        String notation = getChessNotation(startSquare, endSquare, piece, capturedPiece, move.isPromotion);
+        logMove(notation, piece.isWhite());
+
         // 2. Switch the turn back to the Human (Black)
         gameController.switchTurn();
         boardPanel.repaint(); // Update the screen

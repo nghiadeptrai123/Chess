@@ -110,4 +110,11 @@ public class King extends Piece {
         target.setPiece(null);
         return attacked;
     }
+
+    @Override
+    public Piece clonePiece() {
+        King clone = new King(this.isWhite());
+        clone.setMoved(this.isMoved());
+        return clone;
+    }
 }
