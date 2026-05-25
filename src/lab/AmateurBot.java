@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AmateurBot implements ChessBot {
-    private static final int SEARCH_DEPTH = 7;
+    private static final int SEARCH_DEPTH = 5;
     // depth 5 for amateur
 
     private List<Move> getAllLegalMoves(Board board, boolean isWhite) {
