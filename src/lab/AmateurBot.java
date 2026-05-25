@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AmateurBot implements ChessBot {
-    private static final int SEARCH_DEPTH = 5;
+    private static final int SEARCH_DEPTH = 6;
     // depth 5 for amateur
 
     private List<Move> getAllLegalMoves(Board board, boolean isWhite) {
@@ -45,6 +45,36 @@ public class AmateurBot implements ChessBot {
     }
 
     /**
+     * Returns the material value of a piece.
+     */
+    private int getPieceValue(Piece piece) {
+        if (piece instanceof Queen)  return 900;
+        if (piece instanceof Rook)   return 500;
+        if (piece instanceof Bishop) return 300;
+        if (piece instanceof Knight) return 300;
+        if (piece instanceof Pawn)   return 100;
+        return 0; // King
+    }
+
+    private int scoreMove(Board board, Move move){
+        // this use to calculate the score of each move in current state
+        // we will use this to sort legal moves in order to facilitate the alpha-beta prunning
+        int score = 0;
+        Piece Attacker = board.getSquare(move.startRow, move.startCol).getPiece();
+        if (move.isPromotion){
+            score = score + 8000;
+        }else {
+            if(move.capturedPiece != null){
+               int Attacker_val = getPieceValue(Attacker);
+               int Victim_val = getPieceValue(move.capturedPiece);
+               score = score + 10 * Victim_val - Attacker_val;
+            }
+        }
+        return score;
+        // quiet move -> score = 0 
+    }
+
+    /**
      * Calculates who is winning based on standard piece values.
      * White scores are positive, Black scores are negative.
      */
@@ -56,17 +86,7 @@ public class AmateurBot implements ChessBot {
             int c = pos % 8;
             Piece piece = board.getSquare(r, c).getPiece();
             if (piece != null) {
-                int pieceValue = 0;
-                if (piece instanceof Pawn)
-                    pieceValue = 100;
-                else if (piece instanceof Knight)
-                    pieceValue = 300;
-                else if (piece instanceof Bishop)
-                    pieceValue = 300;
-                else if (piece instanceof Rook)
-                    pieceValue = 500;
-                else if (piece instanceof Queen)
-                    pieceValue = 900;
+                int pieceValue = getPieceValue(piece);
                 // Add for White, subtract for Black
                 if (piece.isWhite()) {
                     score += pieceValue;
@@ -86,7 +106,7 @@ public class AmateurBot implements ChessBot {
             return evaluateBoard(board);
         }
         List<Move> legalMoves = getAllLegalMoves(board, isMax);
-
+        legalMoves.sort((m1, m2) -> scoreMove(board, m2) - scoreMove(board, m1));
         if (legalMoves.isEmpty()) {
             if (board.isChecked(isMax)) {
                 // getting checkmated (losing state)
@@ -203,6 +223,7 @@ public class AmateurBot implements ChessBot {
     // find the best move
     public Move getBestMove(Board board, boolean isWhite) {
         List<Move> legalMoves = getAllLegalMoves(board, isWhite);
+        legalMoves.sort((m1, m2) -> scoreMove(board, m2) - scoreMove(board, m1));
         Move bestMove = null;
 
         // White wants to maximize score, Black wants to minimize score;
