@@ -100,7 +100,18 @@ public class ChessBoardUI extends JFrame {
         JButton undoButton = new JButton("Undo Move");
         undoButton.setFont(new Font("SansSerif", Font.BOLD, 16));
         undoButton.addActionListener(e -> undo());
-        sidePanel.add(undoButton, BorderLayout.SOUTH);
+
+        JButton newGameButton = new JButton("New Game");
+        newGameButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+        newGameButton.addActionListener(e -> {
+            this.dispose();
+            ChessBoardUI.main(new String[]{});
+        });
+
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 0, 5));
+        buttonPanel.add(undoButton);
+        buttonPanel.add(newGameButton);
+        sidePanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(sidePanel, BorderLayout.EAST);
 
@@ -557,16 +568,20 @@ public class ChessBoardUI extends JFrame {
 
                     boolean nextPlayeriswhite = gameController.isWhiteTurn;
 
-                    if (board.isCheckmate(nextPlayeriswhite)) {
+                    boolean isCheckmate = board.isCheckmate(nextPlayeriswhite);
+                    boolean isStalemate = board.isStalemate(nextPlayeriswhite);
+                    boolean isChecked = board.isChecked(nextPlayeriswhite);
+
+                    if (isCheckmate) {
+                        gameOver = true;
                         String winner = nextPlayeriswhite ? "Black" : "White";
-                        JOptionPane.showMessageDialog(this, "Checkmate! " + winner + " wins!");
+                        SwingUtilities.invokeLater(() -> promptNewGame("Checkmate! " + winner + " wins!"));
+                    } else if (isStalemate) {
                         gameOver = true;
-                    } else if (board.isStalemate(nextPlayeriswhite)) {
-                        JOptionPane.showMessageDialog(this, "Stalemate! This game is a draw.");
-                        gameOver = true;
-                    } else if (board.isChecked(nextPlayeriswhite)) {
-                        JOptionPane.showMessageDialog(this,
-                                (nextPlayeriswhite ? "White" : "Black") + " King is in Check!");
+                        SwingUtilities.invokeLater(() -> promptNewGame("Stalemate! This game is a draw."));
+                    } else if (isChecked) {
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                                (nextPlayeriswhite ? "White" : "Black") + " King is in Check!"));
                     }
                 }
             }
@@ -653,15 +668,29 @@ public class ChessBoardUI extends JFrame {
         // 2. Switch the turn back to the Human (Black)
         gameController.switchTurn();
         boardPanel.repaint(); // Update the screen
+        
         // 3. Check if the Bot just Checkmated the Human
-        if (board.isCheckmate(false)) {
-            JOptionPane.showMessageDialog(this, "Checkmate! The Bot wins!");
+        boolean isCheckmate = board.isCheckmate(false);
+        boolean isStalemate = board.isStalemate(false);
+        boolean isChecked = board.isChecked(false);
+
+        if (isCheckmate) {
             gameOver = true;
-        } else if (board.isStalemate(false)) {
-            JOptionPane.showMessageDialog(this, "Stalemate! It's a draw.");
+            SwingUtilities.invokeLater(() -> promptNewGame("Checkmate! The Bot wins!"));
+        } else if (isStalemate) {
             gameOver = true;
-        } else if (board.isChecked(false)) {
-            JOptionPane.showMessageDialog(this, "Your King is in Check!");
+            SwingUtilities.invokeLater(() -> promptNewGame("Stalemate! It's a draw."));
+        } else if (isChecked) {
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Your King is in Check!"));
+        }
+    }
+
+    private void promptNewGame(String message) {
+        int choice = JOptionPane.showConfirmDialog(this, message + "\nDo you want to play a new game?", "Game Over", JOptionPane.YES_NO_OPTION);
+        if (choice == JOptionPane.YES_OPTION) {
+            this.dispose();
+            // Wrap in invokeLater to ensure clean UI thread execution
+            javax.swing.SwingUtilities.invokeLater(() -> ChessBoardUI.main(new String[]{}));
         }
     }
 
