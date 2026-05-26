@@ -68,6 +68,8 @@ public class ChessBoardUI extends JFrame {
                 activeBot = new AmateurBot();
             } else if (gameController.botDepth == 6 && !gameController.useQS) {
                 activeBot = new IntermediateBot();
+            } else if (gameController.botDepth == 6 && gameController.useQS) {
+                activeBot = new HardBot();
             } else {
                 activeBot = new BeginnerBot(); // fallback
             }
@@ -805,8 +807,8 @@ public class ChessBoardUI extends JFrame {
                 botDepth = 6;       // Intermediate — depth 6 + positional tables
                 useQS = false;
             } else if (diffChoice == 3) {
-                botDepth = 6;       // Hard — depth 6 + positional tables (QS coming soon)
-                useQS = false;
+                botDepth = 6;       // Hard — depth 6 + positional tables + QS
+                useQS = true;
             }
         }
         // 3. Initialize the game with the chosen settings!
