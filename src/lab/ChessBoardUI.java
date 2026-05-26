@@ -37,6 +37,7 @@ public class ChessBoardUI extends JFrame {
     // Logging state
     private JTextArea moveLogArea;
     private int fullMoveCount = 1;
+    private JLabel statusLabel;
 
     // Undo State
     class GameState {
@@ -130,7 +131,12 @@ public class ChessBoardUI extends JFrame {
             promptNewGame(message);
         });
 
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 0, 5));
+        statusLabel = new JLabel(" ", SwingConstants.CENTER);
+        statusLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        statusLabel.setForeground(new Color(200, 50, 50));
+
+        JPanel buttonPanel = new JPanel(new GridLayout(4, 1, 0, 5));
+        buttonPanel.add(statusLabel);
         buttonPanel.add(undoButton);
         buttonPanel.add(surrenderButton);
         buttonPanel.add(newGameButton);
@@ -146,6 +152,8 @@ public class ChessBoardUI extends JFrame {
         if (gameController.isSinglePlayer && gameController.isWhiteTurn) {
             takeBoardSnapshot(); // update -> freeze the board visually before bot starts
             botThinking = true; // update -> lock input while bot calculates opening move
+            statusLabel.setText("Bot is thinking...");
+            boardPanel.repaint();
             // Hire a background worker to think
             new Thread(() -> {
                 Move openingMove = activeBot.getBestMove(board, true); // true = White
@@ -452,6 +460,8 @@ public class ChessBoardUI extends JFrame {
     private void triggerBot() {
         takeBoardSnapshot();
         botThinking = true;
+        statusLabel.setText("Bot is thinking...");
+        boardPanel.repaint();
         new Thread(() -> {
             Move bestMove = activeBot.getBestMove(board, true);
             try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -637,6 +647,7 @@ public class ChessBoardUI extends JFrame {
     // bot move
     public void executeBotMove(Move move) {
         botThinking = false; // update -> unlock human input now that bot has finished
+        statusLabel.setText(" ");
         if (move == null || gameOver)
             return;
         Square startSquare = board.getSquare(move.startRow, move.startCol);
