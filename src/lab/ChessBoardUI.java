@@ -62,10 +62,14 @@ public class ChessBoardUI extends JFrame {
 
         // Initialize the bot based on chosen difficulty
         if (gameController.isSinglePlayer) {
-            if (gameController.botDepth == 5 && !gameController.useQS) {
+            if (gameController.botDepth == 3) {
+                activeBot = new BeginnerBot();
+            } else if (gameController.botDepth == 5) {
                 activeBot = new AmateurBot();
+            } else if (gameController.botDepth == 6 && !gameController.useQS) {
+                activeBot = new IntermediateBot();
             } else {
-                activeBot = new BeginnerBot(); // default, also placeholder for future bots
+                activeBot = new BeginnerBot(); // fallback
             }
         }
 
@@ -790,19 +794,19 @@ public class ChessBoardUI extends JFrame {
                     diffOptions,
                     diffOptions[0]);
 
-            // Map their choice to an actual depth number
-            if (diffChoice == 0)
-                botDepth = 3; // beginerr only minimax depth 3
-            else if (diffChoice == 1) {
-                botDepth = 5;
-                useQS = false; // amatuer -> depth 5 not use Quiesence search
-            } // mid depth 4 + Quiesence Search
-            else if (diffChoice == 2) {
-                botDepth = 5; // Interediate -> depth 5 + Quiesence Search + Positional Table
-                useQS = true;
+            // Map each difficulty to a search depth and feature flags
+            if (diffChoice == 0) {
+                botDepth = 3;       // Beginner  — plain minimax depth 3
+                useQS = false;
+            } else if (diffChoice == 1) {
+                botDepth = 5;       // Amateur   — plain minimax depth 5
+                useQS = false;
+            } else if (diffChoice == 2) {
+                botDepth = 6;       // Intermediate — depth 6 + positional tables
+                useQS = false;
             } else if (diffChoice == 3) {
-                botDepth = 6; // hard -> depth 6 + QUiesence Search + Positional Table
-                useQS = true;
+                botDepth = 6;       // Hard — depth 6 + positional tables (QS coming soon)
+                useQS = false;
             }
         }
         // 3. Initialize the game with the chosen settings!
