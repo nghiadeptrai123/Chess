@@ -232,6 +232,15 @@ public class IntermediateBot implements ChessBot {
                 score += 10 * victimVal - attackerVal;
             }
         }
+        // Add positional bonus (same idea as your evaluation but in scoreMove)
+        boolean isEndgame = board.activePieceCount <= 18;
+        boolean isWhite   = attacker.isWhite();
+        int toRow   = isWhite ? move.endRow   : (7 - move.endRow);
+        int fromRow = isWhite ? move.startRow : (7 - move.startRow);
+        int toBonus   = getPositionalBonus(attacker, toRow,   move.endCol,   isEndgame);
+        int fromBonus = getPositionalBonus(attacker, fromRow, move.startCol, isEndgame);
+        score += (toBonus - fromBonus);  // prefer moves that improve positional score
+
         return score;
         // quiet move → score = 0
     }
