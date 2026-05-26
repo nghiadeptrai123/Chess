@@ -798,10 +798,10 @@ public class ChessBoardUI extends JFrame {
                 useQS = false; // amatuer -> depth 5 not use Quiesence search
             } // mid depth 4 + Quiesence Search
             else if (diffChoice == 2) {
-                botDepth = 4; // Interediate -> depth 4 + Quiesence Search
+                botDepth = 5; // Interediate -> depth 5 + Quiesence Search + Positional Table
                 useQS = true;
             } else if (diffChoice == 3) {
-                botDepth = 5; // hard -> depth 5 + QUiesence Search
+                botDepth = 6; // hard -> depth 6 + QUiesence Search + Positional Table
                 useQS = true;
             }
         }
