@@ -90,8 +90,8 @@
 │  │(Model) │  │ (Turn/Mode)  │  │(AI IF) │ │
 │  └────────┘  └──────────────┘  └───────┘ │
 │      │                            │       │
-│  Square[8][8]           BeginnerBot / AmateurBot │
-│  activePieceCoords[]              │       │
+│  Square[8][8]           BeginnerBot / AmateurBot   │
+│  activePieceCoords[]    IntermediateBot / HardBot   │
 └──────────────────────────────────────────┘
                │
        ┌───────┴────────┐
@@ -165,12 +165,12 @@
      [Eval] [Eval]   [Eval] [Eval]
 ```
 
-| Bot Level | Depth | Quiescence Search |
-|---|---|---|
-| Beginner | 3 | No |
-| Amateur | 5 | No |
-| Intermediate | 4 | Yes |
-| Hard | 5 | Yes |
+| Bot Level | Depth | Piece-Square Tables | Quiescence Search |
+|---|---|---|---|
+| Beginner | 3 | No | No |
+| Amateur | 5 | No | No |
+| Intermediate | 6 | Yes (12 tables) | No |
+| Hard | 6 | Yes (12 tables) | Yes |
 
 **Alpha-Beta Pruning:** Prunes branches when `β ≤ α`, reducing effective branching factor from O(b^d) to O(b^(d/2)) in the best case.
 
@@ -179,9 +179,28 @@ Moves are scored and sorted before search:
 - Promotions → +8000
 - Captures → `10 × victim_value − attacker_value`
 - Quiet moves → 0
+- Intermediate/Hard: additionally adds **PST delta** (`toBonus − fromBonus`) for positional ordering
 
-**Positional Heuristics:**
-Intermediate and Hard bots utilize **Piece-Square Tables** to evaluate center control, king safety, and development, greatly enhancing positional play beyond raw material.
+**Piece-Square Tables (PSTs) — Positional Intelligence:**
+
+Pre-computed 8×8 bonus/penalty grids teach the AI *where* to place pieces — not just *which* pieces to keep. Each piece type has **two** tables (opening + endgame) for a total of **12 tables**.
+
+**Example: Knight Opening PST** (higher = better square for the knight)
+```
+  a    b    c    d    e    f    g    h
+-50  -40  -30  -30  -30  -30  -40  -50   ← back rank: terrible
+-40  -20    0   +5   +5    0  -20  -40
+-30    0  +10  +15  +15  +10    0  -30
+-30   +5  +15  +20  +20  +15   +5  -30   ← d4/e4: ideal!
+-30    0  +15  +20  +20  +15    0  -30
+-30   +5  +10  +15  +15  +10   +5  -30
+-40  -20    0   +5   +5    0  -20  -40
+-50  -40  -30  -30  -30  -30  -40  -50   ← "knight on the rim is dim"
+```
+
+**Key principles:** Pawns push center; King hides in opening (castled = +30, center = −50) but marches to center in endgame (+40). Phase switches when `activePieceCount ≤ 18`.
+
+**Quiescence Search** (Hard bot only): At depth 0, continues searching all captures/promotions to prevent the **horizon effect** — stops the AI from being tricked by evaluating right before a queen gets taken.
 
 ### Data Structures
 
@@ -254,10 +273,10 @@ Intermediate and Hard bots utilize **Piece-Square Tables** to evaluate center co
 
 | Difficulty | Average Think Time |
 |---|---|
-| Beginner (depth 3) | < 1 second |
-| Amateur (depth 5) | 1–5 seconds |
-| Intermediate (depth 4 + QS) | *(measured value)* |
-| Hard (depth 5 + QS) | *(measured value)* |
+| Beginner (depth 3, material) | < 1 second |
+| Amateur (depth 5, material) | 1–5 seconds |
+| Intermediate (depth 6, material + PSTs) | *(measured value)* |
+| Hard (depth 6, material + PSTs + QS) | *(measured value)* |
 
 **Visual suggestion:** Bar chart of bot think time vs. difficulty level.
 
@@ -268,9 +287,9 @@ Intermediate and Hard bots utilize **Piece-Square Tables** to evaluate center co
 **Heading:** 🏁 Conclusion & Future Work
 
 ### What We Achieved
-- ✅ Fully rule-complete chess game in Java Swing (18 classes, ~5,000+ lines of code)
+- ✅ Fully rule-complete chess game in Java Swing (20 classes, ~5,000+ lines of code)
 - ✅ Clean OOP design: abstract `Piece` hierarchy, `ChessBot` interface for plug-and-play AI
-- ✅ Efficient board engine with O(1) piece removal and O(n) check detection
+- ✅ Four AI difficulty tiers with progressively advanced heuristics (material → PSTs → Quiescence Search)
 - ✅ Minimax + Alpha-Beta Pruning AI across 4 difficulty levels
 - ✅ Robust undo, move logging, and threading architecture
 

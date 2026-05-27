@@ -19,13 +19,15 @@
 | Section | Slides | Est. Time |
 |---|---|---|
 | Title, Team Intro & Overview | 1 | ~30 sec |
-| System Features & Workflow | 1 | ~45 sec |
-| **Live System Demo** | (screen recording) | ~2.5 min |
-| OOP & Key Architecture | 1 | ~1 min |
-| AI Algorithm (Minimax) & Data Structures | 2 | ~1.5 min |
-| Testing & Limitations | 1 | ~45 sec |
+| System Features & Workflow | 1 | ~40 sec |
+| **Live System Demo** | (screen recording) | ~2 min |
+| OOP & Key Architecture | 1 | ~50 sec |
+| UI Components & Java Swing Technology | 1 | ~50 sec |
+| AI Algorithm (Minimax) & Data Structures | 1 | ~50 sec |
+| Minimax Deep Dive — Piece-Square Tables | 1 | ~50 sec |
+| Testing & Limitations | 1 | ~40 sec |
 | Conclusion | 1 | ~30 sec |
-| **Total** | **~7 slides** | **~7 min** |
+| **Total** | **~9 slides** | **~8 min** |
 
 ---
 
@@ -98,14 +100,32 @@
 
 ---
 
-### Slide 5 — AI Algorithm & Data Structures
+### Slide 5 — UI Components & Java Swing Technology
+
+**Heading:** 🎨 UI Components & Technology Stack
+
+**Content:**
+- **Framework:** Java Swing — `JFrame` as the main window, `JPanel` as the custom board canvas.
+- **Rendering:** Custom `paintComponent()` override using **Java2D Graphics API** — each frame draws the 8×8 grid, piece PNGs (loaded via `ImageIO`), legal-move highlights, and board coordinates.
+- **Interaction Model:**
+  - `MouseInputListener` (extends `MouseAdapter`) handles **press → drag → release** for click-and-drop piece movement.
+  - Hover detection changes the cursor to a hand icon over the player's own pieces.
+- **Side Panel:** `JTextArea` inside a `JScrollPane` for the algebraic Move Log; `JButton` grid for Undo, Surrender, and New Game.
+- **Dialogs:** `JOptionPane` for Pawn Promotion picker (Queen/Rook/Bishop/Knight), Check alerts, Checkmate/Stalemate prompts, and the Main Menu (mode + difficulty selection).
+- **Thread Safety:** Bot calculations run on a **background `Thread`**; results are dispatched back via `SwingUtilities.invokeLater()` to prevent UI freezing. A `pieceSnapshot[][]` freezes the visual board while the bot is thinking to eliminate flicker from mid-simulation mutations.
+
+**Speaker Notes:**
+> "Our UI is built entirely with Java Swing and Java2D. The board is a custom `JPanel` that redraws every frame — pieces, highlights, coordinates. Interaction uses a `MouseAdapter` for click-and-drop. A critical design decision was running the bot on a separate thread and freezing a visual snapshot of the board so the user never sees the AI's internal simulations flickering on screen."
+
+---
+
+### Slide 6 — AI Algorithm & Data Structures
 
 **Heading:** 🤖 Minimax AI & Data Structures
 
 **Content:**
 - **Algorithm:** Minimax with Alpha-Beta Pruning (reduces branching factor from O(b^d) to O(b^(d/2))).
-- **Move Ordering:** Sorting moves (promotions/captures first) dramatically improves pruning cutoffs.
-- **Positional Heuristics:** Intermediate and Hard Bots use Piece-Square Tables (evaluating center control, development) beyond just raw material balance.
+- **Move Ordering:** Sorting moves (promotions/captures first) dramatically improves pruning cutoffs. The `scoreMove()` function assigns: promotions = +8000, captures = 10×victim − attacker, plus PST delta.
 - **Data Structures:** 
   - `Square[][]` for the grid (O(1) lookups).
   - `activePieceCoords[]` flattens the board to prevent O(64) scans during check detection.
@@ -117,7 +137,30 @@
 
 ---
 
-### Slide 6 — Testing & Known Limitations
+### Slide 7 — Minimax Deep Dive: Piece-Square Tables
+
+**Heading:** 🧠 Making Minimax Smarter — Piece-Square Tables
+
+**Content:**
+- **The Problem:** Pure material evaluation (Queen = 900, Pawn = 100…) only counts *what* pieces exist — not *where* they stand. A knight on e4 is far stronger than a knight on a1.
+- **The Solution — Piece-Square Tables (PSTs):** 8×8 bonus/penalty grids for each piece type, encoding positional chess knowledge:
+  - **Pawns:** Reward center advance (d4/e4 = +25), punish passive wing pawns.
+  - **Knights:** "Knight on the rim is dim" — edges penalized up to −50, center squares rewarded up to +20.
+  - **King (Opening):** Hide behind castled pawns (+30 at g1/c1); center is heavily penalized (−50).
+  - **King (Endgame):** March to center! Center squares now score +40 (active king wins endgames).
+- **Game Phase Detection:** `activePieceCount ≤ 18` triggers endgame tables automatically (O(1) check).
+- **Evaluation Formula:** `score = Σ (materialValue + positionalBonus)` — White positive, Black negative. The positional bonus is mirrored: `tableRow = row` for White, `tableRow = 7 − row` for Black.
+- **Difficulty Tiers:**
+  - *Beginner/Amateur:* Material only — no PSTs.
+  - *Intermediate:* Material + PSTs (12 tables: opening + endgame per piece).
+  - *Hard:* Material + PSTs + **Quiescence Search** (extends search at leaf nodes through all captures/promotions to eliminate the "horizon effect").
+
+**Speaker Notes:**
+> "What makes our Intermediate and Hard bots much stronger than Beginner is Piece-Square Tables. These are pre-computed 8×8 grids that reward pieces on strong squares — like a knight controlling the center — and penalize bad positions like a king stuck in the middle during the opening. We have separate tables for opening and endgame phases; for example, the King table flips completely — in the opening it should hide, but in the endgame it should march to the center. The Hard bot adds Quiescence Search on top, which prevents the AI from being tricked by the horizon effect — it keeps searching through captures so it doesn't stop evaluating right before a queen gets taken."
+
+---
+
+### Slide 8 — Testing & Known Limitations
 
 **Heading:** 🧪 Testing & Known Limitations
 
@@ -136,7 +179,7 @@
 
 ---
 
-### Slide 7 — Conclusion
+### Slide 9 — Conclusion
 
 **Heading:** 🏁 Conclusion
 
