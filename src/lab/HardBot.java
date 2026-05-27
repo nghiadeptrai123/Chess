@@ -225,7 +225,7 @@ public class HardBot implements ChessBot {
             }
         }
         
-        // Add positional bonus delta
+        // Add positional bonus
         boolean isEndgame = board.activePieceCount <= 18;
         boolean isWhite   = attacker.isWhite();
         int toRow   = isWhite ? move.endRow   : (7 - move.endRow);
