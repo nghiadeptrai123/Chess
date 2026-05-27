@@ -85,12 +85,13 @@
 |---|---|
 | 🖱️ Drag-and-drop | Click and drag pieces; valid destinations highlighted in real time |
 | 🟢 Move highlighting | Green dots = empty valid squares; Red ring = capturable enemy |
-| 📋 Move log | Algebraic chess notation (e.g., `e4`, `Nf3`, `O-O`, `exd5`) |
-| ↩️ Undo | Reverts the last move (double-undo in single-player: bot + human) |
+| 📊 Board Coordinates | Algebraic notation (1-8, a-h) explicitly drawn on board squares |
+| 📋 Move log | Real-time tabular log with algebraic notation (e.g., `e4`, `Nf3`, `O-O`) |
+| ↩️ Undo | Memento-pattern Undo reverts the last move (double-undo in single-player) |
 | 🏰 Castling | Both kingside (`O-O`) and queenside (`O-O-O`) — fully validated |
 | ♟️ Pawn Promotion | Player dialog for human; auto-queen for bot |
 | 🤖 Bot AI | Background-threaded; board frozen during calculation to prevent flicker |
-| 🏳️ Surrender | Graceful game-end for either side |
+| 🏳️ Surrender & New Game | Graceful game end options with `SwingUtilities.invokeLater` preventing UI freeze |
 
 **Workflow Diagram (insert a simple flowchart):**
 ```
@@ -242,9 +243,10 @@ public interface ChessBot {
 | Data Structure | Location | Purpose | Complexity |
 |---|---|---|---|
 | `Square[8][8]` 2D array | `Board` | Grid representation | O(1) cell access |
-| `int[] activePieceCoords[33]` | `Board` | Flat list of active piece positions | O(n) iteration, n ≤ 32 |
-| `int[] boardToIndex[64]` | `Board` | Reverse map: position → list index | O(1) removal |
-| `Stack<GameState>` | `ChessBoardUI` | Undo history (LIFO) | O(1) push/pop |
+| `Square` references | `Board` | Direct King tracking (`whiteKingSquare`) | O(1) King lookup |
+| `int[] activePieceCoords` | `Board` | Flat list of active piece positions | O(n) iteration, n ≤ 32 |
+| `int[] boardToIndex` | `Board` | Reverse map: position → list index | O(1) removal |
+| `Stack<GameState>` | `ChessBoardUI` | Undo history (LIFO) / Memento | O(1) push/pop |
 | `ArrayList<Move>` | Bot classes | Temporary move list per search node | O(1) append |
 | `HashMap<String, BufferedImage>` | `ChessBoardUI` | Piece image cache | O(1) lookup |
 
@@ -320,9 +322,13 @@ Queen=900  |  Rook=500  |  Bishop=300  |  Knight=300  |  Pawn=100
 **Problem:** Bot's Minimax temporarily mutates the `Board` object to simulate moves — if the UI repaints mid-simulation, pieces appear to teleport.  
 **Solution:** `takeBoardSnapshot()` freezes a copy of piece positions; `drawPiecesFromSnapshot()` is used during `botThinking = true`.
 
-#### Decision 3: Undo with Deep Copy
-**Problem:** Undo must completely restore the board state, including which pieces are active and whose turn it is.  
-**Solution:** `saveState()` deep-copies all 64 squares (calling `clonePiece()` on each piece) and the active piece index into a `GameState` object pushed onto a `Stack`. In single-player, 2 states are popped to undo both bot and human moves.
+#### Decision 3: Memento Pattern for Undo
+**Problem:** Undo must completely restore the board state, including piece states like `isMoved`.  
+**Solution:** `saveState()` deep-copies all 64 squares (calling `clonePiece()` on each piece) into a `GameState` object pushed onto a `Stack`.
+
+#### Decision 4: Fixing UI Thread Blocking
+**Problem:** The `JOptionPane` for Checkmate would block the Java Swing EDT, causing the final board state repaint to freeze.
+**Solution:** Checkmate UI popups are wrapped in `SwingUtilities.invokeLater()` so that the final move is fully painted before the dialog blocks interaction.
 
 **Speaker Notes:**
 > "These were three of the most technically interesting decisions we made. Each solved a real problem we encountered during development."

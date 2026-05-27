@@ -140,6 +140,10 @@
 - `Piece` (abstract class) hides movement implementation details — the engine only knows pieces can validate moves and clone themselves
 - `ChessBot` (interface) hides the entire AI algorithm — the game only interacts with `getBestMove()`
 
+### 📸 Memento Pattern (Design Pattern)
+- Implemented via `GameState` inner class to snapshot board state, active pieces, and turn information.
+- Used to robustly execute the **Undo** functionality by restoring deep-copied `Piece` arrays and retaining `isMoved` flags accurately.
+
 **Visual suggestion:** A 2×2 grid with one concept per quadrant, each with a code snippet example.
 
 ---
@@ -181,9 +185,10 @@ Moves are scored and sorted before search:
 | Structure | Used For | Benefit |
 |---|---|---|
 | `Square[8][8]` | Board grid | O(1) access by (row, col) |
+| `Square` references (`whiteKingSquare`, etc.) | King tracking | O(1) King location lookup instead of O(n) search |
 | `int[] activePieceCoords` | Active piece list | O(n) iteration (n ≤ 32), avoids scanning 64 cells |
 | `int[] boardToIndex` | Reverse-map position → index | O(1) piece removal (swap-and-decrement) |
-| `Stack<GameState>` | Undo system | Natural LIFO for move history |
+| `Stack<GameState>` | Undo system | Natural LIFO for move history (Memento Pattern) |
 | `HashMap<String, BufferedImage>` | Piece images | O(1) image lookup during paint |
 
 ---
@@ -206,11 +211,11 @@ Moves are scored and sorted before search:
 | *(Checkmate / game over)* | Game-over dialog with option to start new game |
 
 ### Feature List (bullet points alongside screenshots)
-- 🖱️ **Drag-and-drop** piece movement with real-time highlight
-- 📋 **Move log** in algebraic chess notation (e.g., `e4`, `Nf3`, `O-O`)
-- ↩️ **Undo system** — reverts both human and bot moves in single-player
-- 🏳️ **Surrender button** — graceful game end
-- 🤖 **Bot runs on background thread** — UI stays responsive during calculation
+- 🖱️ **Drag-and-drop** piece movement with real-time highlight and **Board Coordinates** rendered on screen
+- 📋 **Move log** in algebraic chess notation (e.g., `e4`, `Nf3`, `O-O`) via UI text area
+- ↩️ **Undo system** — Memento-based; reverts both human and bot moves seamlessly in single-player
+- 🏳️ **Surrender & New Game buttons** — graceful game end and quick application restart
+- 🤖 **Bot runs on background thread** — UI stays responsive; `invokeLater` prevents checkmate popup freezing
 - 🏰 **Castling** (kingside and queenside) — fully rule-validated
 - ♟️ **Pawn promotion** — with player choice dialog (human) / auto-queen (bot)
 

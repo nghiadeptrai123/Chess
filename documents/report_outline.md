@@ -23,16 +23,21 @@
 ### 1.3 Key Features and Functionalities
 - Interactive 8×8 chess board rendered with Java Swing (`ChessBoardUI`).
 - Drag-and-drop piece movement with real-time legal move highlighting (green dots / red ring for captures).
-- Move log panel displaying algebraic chess notation.
-- Undo move functionality (with double-undo in single-player to revert both bot and human moves).
+- Board explicitly drawn with algebraic coordinates (Ranks 1-8, Files a-h).
+- Tabular move log panel displaying real-time algebraic chess notation.
+- Undo move functionality (Memento Pattern with double-undo in single-player to revert both bot and human moves).
 - Surrender button for graceful game end.
-- New Game prompt on game-over (checkmate or stalemate).
-- Bot thinking runs on a background thread to keep the UI responsive; board is frozen from a snapshot during calculation to prevent visual flicker.
+- New Game prompt on game-over (checkmate or stalemate) wrapped in `SwingUtilities.invokeLater` to prevent freezing.
+- Bot thinking runs on a background thread to keep the UI responsive; board is frozen from a snapshot during calculation.
 - Pawn promotion dialog (Queen, Rook, Bishop, Knight).
 - Castling (both kingside and queenside) fully implemented and validated.
 
 ### 1.4 Modifications Since Proposal / Interim Stage
-- *(Fill in any changes made since the initial proposal — e.g., added Quiescence Search, added Undo feature, added board snapshot to prevent flicker, added difficulty menu.)*
+- Implemented **Undo** using the **Memento Design Pattern**, ensuring exact state restoration (including `isMoved` flags) via `clonePiece()`.
+- Added **Tabular Algebraic Move Logging** and visual **Board Coordinates**.
+- Added **Surrender** and **New Game** functionalities.
+- Fixed critical Java Swing UI thread blocking issues by wrapping end-game dialogs in `SwingUtilities.invokeLater()`.
+- Optimized bot searches by dropping `AmateurBot` depth to 5, pre-caching `whiteKingSquare` and `blackKingSquare` for O(1) lookups, and reusing internal logic objects in the `Queen` class.
 
 ---
 
@@ -48,8 +53,8 @@
 | Castling | `King.isCastlingMove()` + `King.isValidCastle()` enforce all FIDE castling rules |
 | Pawn Promotion | Detected on piece placement; player selects promoted piece via dialog |
 | Bot AI | `BeginnerBot` / `AmateurBot` implement `ChessBot` interface via Minimax + Alpha-Beta |
-| Undo | `Stack<GameState>` stores deep-copied board snapshots; pops 1 or 2 states |
-| Move Logging | Algebraic notation generated in `getChessNotation()` and appended to `JTextArea` |
+| Undo | `Stack<GameState>` stores deep-copied board snapshots via Memento Pattern; pops 1 or 2 states |
+| Move Logging | Algebraic notation generated in `getChessNotation()` and appended sequentially to a tabular UI |
 
 ### 2.2 User Requirements and Expected Behaviors
 - Player selects game mode (1-player / 2-player) and optionally bot difficulty at startup.
@@ -132,9 +137,10 @@ ChessBoardUI (View + Controller)
 | Data Structure | Where Used | Reason |
 |---|---|---|
 | `Square[8][8]` (2D Array) | `Board` | O(1) random access to any cell by (row, col) |
+| `Square` references | `Board` | Direct King tracking (`whiteKingSquare`, `blackKingSquare`) for O(1) checks |
 | `int[] activePieceCoords` (size 33) | `Board` | Compact flat list of occupied squares; avoids scanning all 64 cells during check detection |
 | `int[] boardToIndex` (size 64) | `Board` | Reverse-mapping from board position to index in `activePieceCoords`; enables O(1) removal |
-| `Stack<GameState>` | `ChessBoardUI` | LIFO structure for undo — naturally supports multiple undo levels |
+| `Stack<GameState>` | `ChessBoardUI` | LIFO structure for undo (Memento Pattern) — naturally supports multiple undo levels |
 | `List<Move>` (ArrayList) | `BeginnerBot`, `AmateurBot` | Dynamic list of legal moves generated per search node |
 | `Map<String, BufferedImage>` (HashMap) | `ChessBoardUI` | Key-value lookup for piece images (e.g., `"White King"`) — O(1) retrieval during paint |
 
@@ -277,6 +283,7 @@ OOP - Final Project/
 ### 7.1 Technical Difficulties
 - **Check detection during simulation:** Simulating a move requires temporarily mutating the board; failing to correctly revert state caused cascading bugs. **Solution:** Strict save-and-restore pattern in `willMoveResultInCheck()`.
 - **Bot causing piece flicker:** The bot's Minimax simulation mutates the board object shared with the UI, causing pieces to appear to teleport during calculation. **Solution:** Board snapshot taken before bot starts; UI renders from snapshot while `botThinking = true`.
+- **UI thread blocking on checkmate popups:** The `JOptionPane` for checkmate/surrender was blocking the Java Swing EDT, causing the final graphical board state repaint to freeze before showing the popup. **Solution:** Wrapped end-game dialogs entirely in `SwingUtilities.invokeLater()`.
 - **Castling edge cases:** Multiple FIDE conditions (king not in check, cannot pass through attacked square) required careful sequential validation. **Solution:** `isValidCastle()` with explicit checks for each condition.
 - **Active piece index management:** Removing a piece mid-list without shifting was non-trivial. **Solution:** Swap-and-decrement with the `boardToIndex[]` reverse map.
 
