@@ -283,7 +283,7 @@ Intermediate and Hard bots utilize **Piece-Square Tables** to evaluate center co
 ### Technical Challenges & Solutions
 | Challenge | Solution |
 |---|---|
-| **En Passant complexity:** Tracking ephemeral target squares & removing captured pawns on adjacent squares during recursive Minimax search. | Updated `Move.java` with `isEnPassant` flag, tracked `prevEnPassantTarget` in bot state, and handled custom O(1) active piece removal during simulation. |
+| **Minimax State Corruption (The Ghost Pawn Bug):** Tracking ephemeral target squares during recursive Minimax search triggered a flaw where pawns could capture their own color's "ghosts". Combined with an uninitialized array index default, this caused the internal `activePieceCoords` array to silently corrupt and overflow (crashing the thread and triggering false stalemates). | Enforced strict color validation for En Passant captures (`epPawn.isWhite() != this.isWhite()`) and ensured `boardToIndex` safely defaults to `-1` for empty squares, perfectly preserving array length during deep simulations. |
 | **UI thread freezing:** Checkmate/surrender popups blocked the Swing Event Dispatch Thread. | Wrapped all end-game dialogs in `SwingUtilities.invokeLater()` to ensure rendering finishes before interaction blocks. |
 | **UI flickering during bot turn:** Bot's Minimax mutates the board object shared with the UI. | Isolated simulation via a Board snapshot; UI freezes visually while `botThinking = true`. |
 

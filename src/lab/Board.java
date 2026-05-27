@@ -21,14 +21,21 @@ public class Board {
 
 	public void removeActivePiece(int coord) {
 		int index = boardToIndex[coord];
+		if (index == -1 || index >= activePieceCount) return;
+		
 		int lastCoord = activePieceCoords[activePieceCount - 1];
 
 		activePieceCoords[index] = lastCoord;
 		boardToIndex[lastCoord] = index;
+		
+		boardToIndex[coord] = -1;
 		activePieceCount--;
 	}
 
 	Board() {
+		for(int i = 0; i < 64; i++) {
+			boardToIndex[i] = -1;
+		}
 		for(int i = 0; i < 8; i++) {
 			for(int j = 0; j < 8; j++) {
 				boolean color = ((i+j) % 2 == 0) ? false : true;

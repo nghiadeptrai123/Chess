@@ -127,12 +127,12 @@
   - 50-move draw rules are not implemented.
   - No persistent save/load features.
 
-**Technical Challenges:**
+**Technical Challenges & Limitations:**
 - **UI Thread Freezing:** End-game dialogs blocked rendering; solved using `SwingUtilities.invokeLater()`.
-- **En Passant Complexity:** Solved difficult recursive Minimax state restoration by explicitly tracking and undoing `enPassantTarget` and removing captured adjacent pawns manually during search tree traversal.
+- **Minimax State Corruption (The Ghost Pawn Bug):** Implementing En Passant introduced a severe bug during the AI's deep recursive search. A flaw in tracking the ephemeral `enPassantTarget` state allowed pawns to capture their own color's "ghosts", and an uninitialized array index default caused the internal `activePieceCoords` array to silently corrupt and overflow. This triggered false stalemates and `ArrayIndexOutOfBounds` crashes. We solved this by enforcing strict color validation for En Passant captures and ensuring `boardToIndex` safely defaults to `-1`.
 
 **Speaker Notes:**
-> "We utilized unit tests to ensure our piece movement logic was flawless. A major challenge was maintaining the ephemeral En Passant state during the bot's deep game-tree search, but we solved this by carefully deep-tracking the target square and capturing logic."
+> "We utilized unit tests to ensure our piece movement logic was flawless. A major challenge and limitation we encountered was maintaining the ephemeral En Passant state during the bot's deep game-tree search. We actually triggered a critical bug where the AI's internal tracking array overflowed because it tried to capture a 'ghost' pawn. It taught us a harsh lesson about state synchronization in recursive trees!"
 
 ---
 

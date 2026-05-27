@@ -192,10 +192,10 @@ public class IntermediateBot implements ChessBot {
                                     if (i_final == promotionRow) {
                                         m.isPromotion = true;
                                     }
-                                }
                                     if (j != j_final && m.capturedPiece == null) {
                                         m.isEnPassant = true;
                                     }
+                                }
                                 moves.add(m);
                             }
                         }
@@ -325,7 +325,7 @@ public class IntermediateBot implements ChessBot {
                 }
                 movingPiece.setMoved(true);
                 board.removeActivePiece(startPos);
-                if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
+                if (move.capturedPiece == null) board.addActivePiece(endPos);
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
@@ -343,7 +343,7 @@ public class IntermediateBot implements ChessBot {
                 movingPiece.setMoved(originalMovedFlag);
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
-                if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
+                if (move.capturedPiece == null) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
 
                 if (move.isEnPassant) {
@@ -391,7 +391,7 @@ public class IntermediateBot implements ChessBot {
                 }
                 movingPiece.setMoved(true);
                 board.removeActivePiece(startPos);
-                if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
+                if (move.capturedPiece == null) board.addActivePiece(endPos);
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
@@ -409,7 +409,7 @@ public class IntermediateBot implements ChessBot {
                 movingPiece.setMoved(originalMovedFlag);
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
-                if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
+                if (move.capturedPiece == null) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
 
                 if (move.isEnPassant) {
@@ -465,7 +465,7 @@ public class IntermediateBot implements ChessBot {
             }
             movingPiece.setMoved(true);
             board.removeActivePiece(startPos);
-            if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
+            if (move.capturedPiece == null) board.addActivePiece(endPos);
             if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
@@ -483,7 +483,7 @@ public class IntermediateBot implements ChessBot {
                 movingPiece.setMoved(originalMovedFlag);
             start.setPiece(movingPiece);
             end.setPiece(move.capturedPiece);
-            if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
+            if (move.capturedPiece == null) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
 
                 if (move.isEnPassant) {

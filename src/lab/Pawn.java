@@ -22,7 +22,13 @@ public class Pawn extends Piece {
         // Capture diagonally
         if (dy == 1 && dx == direction && end.getPiece() != null && end.getPiece().isWhite() != this.isWhite()) return true;
         // En Passant Capture diagonally
-        if (dy == 1 && dx == direction && end.getPiece() == null && end == board.enPassantTarget) return true;
+        if (dy == 1 && dx == direction && end.getPiece() == null && end == board.enPassantTarget) {
+            Square epPawnSquare = board.getSquare(start.getRow(), end.getCol());
+            Piece epPawn = epPawnSquare.getPiece();
+            if (epPawn != null && epPawn.isWhite() != this.isWhite()) {
+                return true;
+            }
+        }
         return false;
     }
 
