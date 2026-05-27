@@ -21,6 +21,8 @@ public class Pawn extends Piece {
         if (dy == 0 && dx == direction && end.getPiece() == null) return true;
         // Capture diagonally
         if (dy == 1 && dx == direction && end.getPiece() != null && end.getPiece().isWhite() != this.isWhite()) return true;
+        // En Passant Capture diagonally
+        if (dy == 1 && dx == direction && end.getPiece() == null && end == board.enPassantTarget) return true;
         return false;
     }
 

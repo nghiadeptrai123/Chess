@@ -11,6 +11,7 @@ public class Board {
 
 	public Square whiteKingSquare;
 	public Square blackKingSquare;
+	public Square enPassantTarget = null;
 
 	public void addActivePiece(int coord) {
 		activePieceCoords[activePieceCount] = coord;
@@ -77,6 +78,17 @@ public boolean willMoveResultInCheck(Square start, Square end, boolean isWhite){
 	Piece movingPiece = start.getPiece();
 	Piece capturedPiece = end.getPiece();
 	
+	// Detect if this is an En Passant capture simulation
+	boolean isEnPassant = (movingPiece instanceof Pawn) && (start.getCol() != end.getCol()) && (capturedPiece == null);
+	Square epPawnSquare = null;
+	Piece epCapturedPiece = null;
+
+	if (isEnPassant) {
+		epPawnSquare = getSquare(start.getRow(), end.getCol());
+		epCapturedPiece = epPawnSquare.getPiece();
+		epPawnSquare.setPiece(null); // Temporarily remove captured pawn
+	}
+
 	// temporary simulate the state ( assuming it is a valid move)
 	end.setPiece(movingPiece);
 	start.setPiece(null);
@@ -96,6 +108,10 @@ public boolean willMoveResultInCheck(Square start, Square end, boolean isWhite){
 	if (movingPiece instanceof King) {
 		if (isWhite) whiteKingSquare = start;
 		else blackKingSquare = start;
+	}
+
+	if (isEnPassant) {
+		epPawnSquare.setPiece(epCapturedPiece); // Restore captured pawn
 	}
 
 	return flag;

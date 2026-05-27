@@ -175,7 +175,7 @@ ChessBoardUI (View + Controller)
 - Piece values: Queen=900, Rook=500, Bishop=300, Knight=300, Pawn=100.
 
 ### 4.4 Trade-offs and Optimization Decisions
-- **Material-only evaluation** is fast but ignores positional factors (center control, pawn structure). Future improvement: piece-square tables.
+- **Positional Heuristics vs. Speed**: `BeginnerBot` and `AmateurBot` use material-only evaluation to remain extremely fast. `Intermediate` and `Hard` bots utilize **Piece-Square Tables** for advanced positional awareness, trading calculation speed for much stronger strategic play.
 - **Active piece list** avoids O(64) full-board scans during check detection and bot evaluation; instead O(n) where n ≤ 32.
 - **Board snapshot before bot calculation** prevents mid-simulation mutations from flickering on screen — a clean separation between the AI simulation state and display state.
 
@@ -286,6 +286,7 @@ OOP - Final Project/
 - **UI thread blocking on checkmate popups:** The `JOptionPane` for checkmate/surrender was blocking the Java Swing EDT, causing the final graphical board state repaint to freeze before showing the popup. **Solution:** Wrapped end-game dialogs entirely in `SwingUtilities.invokeLater()`.
 - **Castling edge cases:** Multiple FIDE conditions (king not in check, cannot pass through attacked square) required careful sequential validation. **Solution:** `isValidCastle()` with explicit checks for each condition.
 - **Active piece index management:** Removing a piece mid-list without shifting was non-trivial. **Solution:** Swap-and-decrement with the `boardToIndex[]` reverse map.
+- **En Passant Complexity:** Managing the ephemeral target square and properly removing the captured pawn on the adjacent square (not the destination square) during recursive Minimax simulation was highly complex. **Solution:** Enhanced the `Move` class with an `isEnPassant` flag, tracked `prevEnPassantTarget` at every search depth, and implemented custom O(1) active-piece removal for the captured pawn during simulation.
 
 ### 7.2 Design or Architectural Issues
 - **Bot code duplication:** `BeginnerBot` and `AmateurBot` share identical Minimax logic differing only in depth. **Future improvement:** Extract a single configurable `MinimaxBot` class.
@@ -315,16 +316,13 @@ OOP - Final Project/
 - Extensible bot architecture: new difficulty levels can be added by implementing `ChessBot`.
 
 ### 8.3 Current Limitations or Unresolved Issues
-- **En passant** is not implemented.
 - **Draw by repetition** and **50-move rule** are not enforced.
-- **Bot evaluation** is material-only; no positional heuristics (piece-square tables, king safety, pawn structure).
 - `BeginnerBot` and `AmateurBot` share nearly identical code (only differ in `SEARCH_DEPTH`).
 - No persistent game save / load functionality.
 
 ### 8.4 Possible Future Improvements or Extensions
-- Implement en passant and the 50-move / threefold repetition draw rules.
-- Add piece-square table evaluation for positional awareness.
-- Refactor bots into a single `MinimaxBot(depth, useQS)` class.
+- Implement the 50-move / threefold repetition draw rules.
+- Refactor bots into a single `MinimaxBot(depth, useQS, usePositional)` class.
 - Implement Quiescence Search for all difficulty levels.
 - Add a proper opening book for the early game.
 - Implement networked multiplayer.

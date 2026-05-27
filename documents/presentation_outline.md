@@ -105,6 +105,7 @@
 **Content:**
 - **Algorithm:** Minimax with Alpha-Beta Pruning (reduces branching factor from O(b^d) to O(b^(d/2))).
 - **Move Ordering:** Sorting moves (promotions/captures first) dramatically improves pruning cutoffs.
+- **Positional Heuristics:** Intermediate and Hard Bots use Piece-Square Tables (evaluating center control, development) beyond just raw material balance.
 - **Data Structures:** 
   - `Square[][]` for the grid (O(1) lookups).
   - `activePieceCoords[]` flattens the board to prevent O(64) scans during check detection.
@@ -116,19 +117,22 @@
 
 ---
 
-### Slide 6 — Testing & Limitations
+### Slide 6 — Testing & Known Limitations
 
 **Heading:** 🧪 Testing & Known Limitations
 
 **Content:**
-- **Testing:** `TestRunner` unit tests validate piece movement rules in isolation. Manual testing confirmed castling, promotion, and checkmate accuracy. UI thread synchronization was strictly tested.
+- **Testing:** `TestRunner` unit tests validate piece movement rules in isolation. Manual testing confirmed castling, en passant, promotion, and checkmate accuracy. UI thread synchronization was strictly tested.
 - **Limitations:**
-  - En passant and 50-move draw rules are not implemented.
-  - Bot evaluation is material-only (no piece-square positional heuristics).
+  - 50-move draw rules are not implemented.
   - No persistent save/load features.
 
+**Technical Challenges:**
+- **UI Thread Freezing:** End-game dialogs blocked rendering; solved using `SwingUtilities.invokeLater()`.
+- **En Passant Complexity:** Solved difficult recursive Minimax state restoration by explicitly tracking and undoing `enPassantTarget` and removing captured adjacent pawns manually during search tree traversal.
+
 **Speaker Notes:**
-> "We utilized unit tests to ensure our piece movement logic was flawless. While our engine is robust, there are a few limitations like missing en passant and relying solely on material evaluation rather than positional heuristics."
+> "We utilized unit tests to ensure our piece movement logic was flawless. A major challenge was maintaining the ephemeral En Passant state during the bot's deep game-tree search, but we solved this by carefully deep-tracking the target square and capturing logic."
 
 ---
 

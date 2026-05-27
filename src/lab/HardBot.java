@@ -189,6 +189,9 @@ public class HardBot implements ChessBot {
                                         m.isPromotion = true;
                                     }
                                 }
+                                    if (j != j_final && m.capturedPiece == null) {
+                                        m.isEnPassant = true;
+                                    }
                                 moves.add(m);
                             }
                         }
@@ -278,6 +281,18 @@ public class HardBot implements ChessBot {
                 Square end   = board.getSquare(move.endRow,   move.endCol);
                 Piece movingPiece = start.getPiece();
                 boolean originalMovedFlag = movingPiece.isMoved();
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
                 int startPos = move.startRow * 8 + move.startCol;
                 int endPos   = move.endRow   * 8 + move.endCol;
 
@@ -290,19 +305,31 @@ public class HardBot implements ChessBot {
                 }
                 movingPiece.setMoved(true);
                 board.removeActivePiece(startPos);
-                if (move.capturedPiece == null) board.addActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
                 }
 
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
+
                 int eval = quiescenceSearch(board, alpha, beta, false);
 
+                board.enPassantTarget = prevEnPassantTarget;
                 movingPiece.setMoved(originalMovedFlag);
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
-                if (move.capturedPiece == null) board.removeActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = start;
                     else                       board.blackKingSquare = start;
@@ -320,6 +347,18 @@ public class HardBot implements ChessBot {
                 Square end   = board.getSquare(move.endRow,   move.endCol);
                 Piece movingPiece = start.getPiece();
                 boolean originalMovedFlag = movingPiece.isMoved();
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
                 int startPos = move.startRow * 8 + move.startCol;
                 int endPos   = move.endRow   * 8 + move.endCol;
 
@@ -332,19 +371,31 @@ public class HardBot implements ChessBot {
                 }
                 movingPiece.setMoved(true);
                 board.removeActivePiece(startPos);
-                if (move.capturedPiece == null) board.addActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
                 }
 
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
+
                 int eval = quiescenceSearch(board, alpha, beta, true);
 
+                board.enPassantTarget = prevEnPassantTarget;
                 movingPiece.setMoved(originalMovedFlag);
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
-                if (move.capturedPiece == null) board.removeActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = start;
                     else                       board.blackKingSquare = start;
@@ -380,6 +431,18 @@ public class HardBot implements ChessBot {
                 Square end   = board.getSquare(move.endRow,   move.endCol);
                 Piece movingPiece = start.getPiece();
                 boolean originalMovedFlag = movingPiece.isMoved();
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
                 int startPos = move.startRow * 8 + move.startCol;
                 int endPos   = move.endRow   * 8 + move.endCol;
 
@@ -392,19 +455,31 @@ public class HardBot implements ChessBot {
                 }
                 movingPiece.setMoved(true);
                 board.removeActivePiece(startPos);
-                if (move.capturedPiece == null) board.addActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
                 }
 
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
+
                 int eval = minimax(board, depth - 1, alpha, beta, false);
 
+                board.enPassantTarget = prevEnPassantTarget;
                 movingPiece.setMoved(originalMovedFlag);
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
-                if (move.capturedPiece == null) board.removeActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = start;
                     else                       board.blackKingSquare = start;
@@ -422,6 +497,18 @@ public class HardBot implements ChessBot {
                 Square end   = board.getSquare(move.endRow,   move.endCol);
                 Piece movingPiece = start.getPiece();
                 boolean originalMovedFlag = movingPiece.isMoved();
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
                 int startPos = move.startRow * 8 + move.startCol;
                 int endPos   = move.endRow   * 8 + move.endCol;
 
@@ -434,19 +521,31 @@ public class HardBot implements ChessBot {
                 }
                 movingPiece.setMoved(true);
                 board.removeActivePiece(startPos);
-                if (move.capturedPiece == null) board.addActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = end;
                     else                       board.blackKingSquare = end;
                 }
 
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
+
                 int eval = minimax(board, depth - 1, alpha, beta, true);
 
+                board.enPassantTarget = prevEnPassantTarget;
                 movingPiece.setMoved(originalMovedFlag);
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
-                if (move.capturedPiece == null) board.removeActivePiece(endPos);
+                if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
                 board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
                 if (movingPiece instanceof King) {
                     if (movingPiece.isWhite()) board.whiteKingSquare = start;
                     else                       board.blackKingSquare = start;
@@ -471,7 +570,19 @@ public class HardBot implements ChessBot {
             Square end   = board.getSquare(move.endRow,   move.endCol);
             Piece movingPiece = start.getPiece();
             boolean originalMovedFlag = movingPiece.isMoved();
-            int startPos = move.startRow * 8 + move.startCol;
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
+                int startPos = move.startRow * 8 + move.startCol;
             int endPos   = move.endRow   * 8 + move.endCol;
 
             if (move.isPromotion && movingPiece instanceof Pawn) {
@@ -483,19 +594,31 @@ public class HardBot implements ChessBot {
             }
             movingPiece.setMoved(true);
             board.removeActivePiece(startPos);
-            if (move.capturedPiece == null) board.addActivePiece(endPos);
+            if (move.capturedPiece == null && !move.isEnPassant) board.addActivePiece(endPos);
             if (movingPiece instanceof King) {
-                if (movingPiece.isWhite()) board.whiteKingSquare = end;
-                else                       board.blackKingSquare = end;
-            }
+                    if (movingPiece.isWhite()) board.whiteKingSquare = end;
+                    else                       board.blackKingSquare = end;
+                }
+
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
 
             int score = minimax(board, SEARCH_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, !isWhite);
 
-            movingPiece.setMoved(originalMovedFlag);
+            board.enPassantTarget = prevEnPassantTarget;
+                movingPiece.setMoved(originalMovedFlag);
             start.setPiece(movingPiece);
             end.setPiece(move.capturedPiece);
-            if (move.capturedPiece == null) board.removeActivePiece(endPos);
-            board.addActivePiece(startPos);
+            if (move.capturedPiece == null && !move.isEnPassant) board.removeActivePiece(endPos);
+                board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
             if (movingPiece instanceof King) {
                 if (movingPiece.isWhite()) board.whiteKingSquare = start;
                 else                       board.blackKingSquare = start;

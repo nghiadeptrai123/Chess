@@ -12,6 +12,7 @@ public class Move {
     public int endRow;
     public int endCol;
     public boolean isPromotion;               // update -> added promotion flag
+    public boolean isEnPassant;
     // This is the secret to making the Undo pattern work!
     public Piece capturedPiece; 
     // Constructor to easily create a move in one line
@@ -22,5 +23,6 @@ public class Move {
         this.endCol = endCol;
         this.capturedPiece = capturedPiece;
         this.isPromotion = false;
+        this.isEnPassant = false;
     }
 }

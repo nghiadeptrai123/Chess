@@ -32,6 +32,9 @@ public class BeginnerBot implements ChessBot {
                                     if (i_final == promotionRow) {
                                         m.isPromotion = true;
                                     }
+                                    if (j != j_final && m.capturedPiece == null) {
+                                        m.isEnPassant = true;
+                                    }
                                 }
                                 moves.add(m);
                             }
@@ -131,6 +134,18 @@ public class BeginnerBot implements ChessBot {
                 Piece movingPiece = start.getPiece();
 
                 boolean originalMovedFlag = movingPiece.isMoved(); // update -> store original isMoved flag
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
 
                 int startPos = move.startRow * 8 + move.startCol;
                 int endPos = move.endRow * 8 + move.endCol;
@@ -158,10 +173,17 @@ public class BeginnerBot implements ChessBot {
                         board.blackKingSquare = end;
                 }
 
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
+
                 // recurse minimax
                 int eval = minimax(board, depth - 1, alpha, beta, false);
 
                 // undo
+                board.enPassantTarget = prevEnPassantTarget;
                 movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
@@ -170,6 +192,11 @@ public class BeginnerBot implements ChessBot {
                     board.removeActivePiece(endPos);
                 }
                 board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
 
                 // Revert king square if king moved
                 if (movingPiece instanceof King) {
@@ -201,6 +228,18 @@ public class BeginnerBot implements ChessBot {
                 Piece movingPiece = start.getPiece();
 
                 boolean originalMovedFlag = movingPiece.isMoved(); // update -> store original isMoved flag
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
 
                 int startPos = move.startRow * 8 + move.startCol;
                 int endPos = move.endRow * 8 + move.endCol;
@@ -228,10 +267,17 @@ public class BeginnerBot implements ChessBot {
                         board.blackKingSquare = end;
                 }
 
+                if (movingPiece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+                    board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+                } else {
+                    board.enPassantTarget = null;
+                }
+
                 // Recurse
                 int eval = minimax(board, depth - 1, alpha, beta, true);
 
                 // Undo
+                board.enPassantTarget = prevEnPassantTarget;
                 movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
                 start.setPiece(movingPiece);
                 end.setPiece(move.capturedPiece);
@@ -240,6 +286,11 @@ public class BeginnerBot implements ChessBot {
                     board.removeActivePiece(endPos);
                 }
                 board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
 
                 // Revert king square if king moved
                 if (movingPiece instanceof King) {
@@ -273,6 +324,18 @@ public class BeginnerBot implements ChessBot {
             Piece movingPiece = start.getPiece();
 
             boolean originalMovedFlag = movingPiece.isMoved(); // update -> store original isMoved flag
+                Square prevEnPassantTarget = board.enPassantTarget;
+                
+                Square epPawnSquare = null;
+                Piece epCapturedPiece = null;
+                int epCapturedPos = -1;
+                if (move.isEnPassant) {
+                    epPawnSquare = board.getSquare(move.startRow, move.endCol);
+                    epCapturedPiece = epPawnSquare.getPiece();
+                    epCapturedPos = epPawnSquare.getRow() * 8 + epPawnSquare.getCol();
+                    epPawnSquare.setPiece(null);
+                    board.removeActivePiece(epCapturedPos);
+                }
 
             int startPos = move.startRow * 8 + move.startCol;
             int endPos = move.endRow * 8 + move.endCol;
@@ -305,7 +368,8 @@ public class BeginnerBot implements ChessBot {
             int score = minimax(board, SEARCH_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, !isWhite);
 
             // 4. UNDO the move (Restore the exact state)
-            movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
+            board.enPassantTarget = prevEnPassantTarget;
+                movingPiece.setMoved(originalMovedFlag); // update -> restore original isMoved flag
             start.setPiece(movingPiece);
             end.setPiece(move.capturedPiece);
 
@@ -313,6 +377,11 @@ public class BeginnerBot implements ChessBot {
                 board.removeActivePiece(endPos);
             }
             board.addActivePiece(startPos);
+
+                if (move.isEnPassant) {
+                    epPawnSquare.setPiece(epCapturedPiece);
+                    board.addActivePiece(epCapturedPos);
+                }
 
             // Revert king square if king moved
             if (movingPiece instanceof King) {

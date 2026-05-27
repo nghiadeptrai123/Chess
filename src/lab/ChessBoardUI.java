@@ -47,6 +47,8 @@ public class ChessBoardUI extends JFrame {
         int activePieceCount;
         int whiteKingRow, whiteKingCol;
         int blackKingRow, blackKingCol;
+        int enPassantTargetRow = -1;
+        int enPassantTargetCol = -1;
         boolean isWhiteTurn;
         String moveLogText;
         int fullMoveCount;
@@ -415,6 +417,13 @@ public class ChessBoardUI extends JFrame {
             state.blackKingRow = board.blackKingSquare.getRow();
             state.blackKingCol = board.blackKingSquare.getCol();
         }
+        if (board.enPassantTarget != null) {
+            state.enPassantTargetRow = board.enPassantTarget.getRow();
+            state.enPassantTargetCol = board.enPassantTarget.getCol();
+        } else {
+            state.enPassantTargetRow = -1;
+            state.enPassantTargetCol = -1;
+        }
         state.isWhiteTurn = gameController.isWhiteTurn;
         state.moveLogText = moveLogArea.getText();
         state.fullMoveCount = fullMoveCount;
@@ -444,6 +453,11 @@ public class ChessBoardUI extends JFrame {
         board.activePieceCount = state.activePieceCount;
         if (board.whiteKingSquare != null) board.whiteKingSquare = board.getSquare(state.whiteKingRow, state.whiteKingCol);
         if (board.blackKingSquare != null) board.blackKingSquare = board.getSquare(state.blackKingRow, state.blackKingCol);
+        if (state.enPassantTargetRow != -1) {
+            board.enPassantTarget = board.getSquare(state.enPassantTargetRow, state.enPassantTargetCol);
+        } else {
+            board.enPassantTarget = null;
+        }
         
         gameController.isWhiteTurn = state.isWhiteTurn;
         moveLogArea.setText(state.moveLogText);
@@ -540,6 +554,14 @@ public class ChessBoardUI extends JFrame {
                         board.addActivePiece(dragToRow * 8 + dragToCol);
                     }
 
+                    // En Passant capture execution
+                    boolean isEnPassant = (piece instanceof Pawn) && (dragFromCol != dragToCol) && (capturedPiece == null);
+                    if (isEnPassant) {
+                        Square epPawnSquare = board.getSquare(dragFromRow, dragToCol);
+                        epPawnSquare.setPiece(null);
+                        board.removeActivePiece(dragFromRow * 8 + dragToCol);
+                    }
+
                     // implementing Castling: move the rook to the square the king passed through
                     if (piece instanceof King) {
                         King king = (King) piece;
@@ -596,6 +618,13 @@ public class ChessBoardUI extends JFrame {
                     // Log the move before switching turns
                     String notation = getChessNotation(startSquare, endSquare, piece, capturedPiece, isPromotion);
                     logMove(notation, piece.isWhite());
+
+                    // Update En Passant Target
+                    if (piece instanceof Pawn && Math.abs(dragFromRow - dragToRow) == 2) {
+                        board.enPassantTarget = board.getSquare((dragFromRow + dragToRow) / 2, dragFromCol);
+                    } else {
+                        board.enPassantTarget = null;
+                    }
 
                     gameController.switchTurn();
 
@@ -672,6 +701,14 @@ public class ChessBoardUI extends JFrame {
             board.addActivePiece(move.endRow * 8 + move.endCol);
         }
 
+        // En Passant capture execution
+        boolean isEnPassant = (piece instanceof Pawn) && (move.startCol != move.endCol) && (capturedPiece == null);
+        if (isEnPassant) {
+            Square epPawnSquare = board.getSquare(move.startRow, move.endCol);
+            epPawnSquare.setPiece(null);
+            board.removeActivePiece(move.startRow * 8 + move.endCol);
+        }
+
         piece.setMoved(true);
         // update -> handle castling: if king moved 2 squares, also move the rook
         if (piece instanceof King && Math.abs(move.startCol - move.endCol) == 2) {
@@ -698,6 +735,13 @@ public class ChessBoardUI extends JFrame {
         // Log the move before switching turns
         String notation = getChessNotation(startSquare, endSquare, piece, capturedPiece, move.isPromotion);
         logMove(notation, piece.isWhite());
+
+        // Update En Passant Target
+        if (piece instanceof Pawn && Math.abs(move.startRow - move.endRow) == 2) {
+            board.enPassantTarget = board.getSquare((move.startRow + move.endRow) / 2, move.startCol);
+        } else {
+            board.enPassantTarget = null;
+        }
 
         // 2. Switch the turn back to the Human (Black)
         gameController.switchTurn();

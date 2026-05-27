@@ -180,6 +180,9 @@ Moves are scored and sorted before search:
 - Captures → `10 × victim_value − attacker_value`
 - Quiet moves → 0
 
+**Positional Heuristics:**
+Intermediate and Hard bots utilize **Piece-Square Tables** to evaluate center control, king safety, and development, greatly enhancing positional play beyond raw material.
+
 ### Data Structures
 
 | Structure | Used For | Benefit |
@@ -274,15 +277,18 @@ Moves are scored and sorted before search:
 ### Known Limitations
 | Limitation | Details |
 |---|---|
-| En passant | Not implemented |
 | Draw rules | 50-move rule / threefold repetition not enforced |
-| Bot evaluation | Material-only; no positional heuristics |
-| Code duplication | `BeginnerBot` / `AmateurBot` nearly identical |
+| Bot code duplication | `BeginnerBot` / `AmateurBot` nearly identical |
+
+### Technical Challenges & Solutions
+| Challenge | Solution |
+|---|---|
+| **En Passant complexity:** Tracking ephemeral target squares & removing captured pawns on adjacent squares during recursive Minimax search. | Updated `Move.java` with `isEnPassant` flag, tracked `prevEnPassantTarget` in bot state, and handled custom O(1) active piece removal during simulation. |
+| **UI thread freezing:** Checkmate/surrender popups blocked the Swing Event Dispatch Thread. | Wrapped all end-game dialogs in `SwingUtilities.invokeLater()` to ensure rendering finishes before interaction blocks. |
+| **UI flickering during bot turn:** Bot's Minimax mutates the board object shared with the UI. | Isolated simulation via a Board snapshot; UI freezes visually while `botThinking = true`. |
 
 ### Future Improvements
-- 📐 **Piece-square tables** for positional bot evaluation
-- ♟️ **En passant** and full draw rules
-- 🔄 **Refactored bot** — single `MinimaxBot(depth, useQS)` class
+- 🔄 **Refactored bot** — single `MinimaxBot(depth, useQS, usePositional)` class
 - 🌐 **Network multiplayer**
 - ⏱️ **Chess clock / timer**
 - 💾 **Save & Load game** (PGN format)
