@@ -227,6 +227,7 @@ ChessBoardUI (View + Controller)
 - **Castling validation:** `King.isValidCastle()` checks: king hasn't moved, rook hasn't moved, no pieces between them, king is not in check, king does not pass through or land on an attacked square.
 - **Undo in single-player:** Since the bot is white, undoing one human move leaves it as the bot's turn again. The undo method pops 2 states (both bot and player moves) and re-triggers the bot.
 - **Pawn promotion:** Detected during move execution by checking if a Pawn reaches row 0 (black) or row 7 (white). The bot auto-promotes to Queen; human is shown a dialog.
+- **En Passant:** The target square is tracked globally via `Board.enPassantTarget` and updated only when a pawn moves exactly two squares. During captures, `willMoveResultInCheck()` and `minimax()` carefully orchestrate the removal and restoration of the captured pawn from a different square than the destination.
 
 ### 5.3 File Structure and Package Organization
 ```
