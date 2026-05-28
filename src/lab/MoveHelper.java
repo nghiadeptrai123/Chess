@@ -45,7 +45,8 @@ public class MoveHelper {
     }
 
     /**
-     * Simulates a move to check if it results in the player's own King being in check.
+     * Simulates a move to check if it results in the player's own King being in
+     * check.
      */
     public static boolean willMoveResultInCheck(Board board, Square start, Square end, boolean isWhite) {
         Piece movingPiece = start.getPiece();
@@ -60,8 +61,10 @@ public class MoveHelper {
 
         // Update king square if king moves
         if (movingPiece instanceof King) {
-            if (isWhite) board.whiteKingSquare = end;
-            else board.blackKingSquare = end;
+            if (isWhite)
+                board.whiteKingSquare = end;
+            else
+                board.blackKingSquare = end;
         }
 
         // 2. Evaluate if the King is in check
@@ -73,8 +76,10 @@ public class MoveHelper {
 
         // Revert king square if king moved
         if (movingPiece instanceof King) {
-            if (isWhite) board.whiteKingSquare = start;
-            else board.blackKingSquare = start;
+            if (isWhite)
+                board.whiteKingSquare = start;
+            else
+                board.blackKingSquare = start;
         }
 
         return inCheck;
@@ -82,7 +87,8 @@ public class MoveHelper {
 
     /**
      * Returns true if the specified player has at least one legal move.
-     * A move is legal if the piece can make the move and it does not leave the King in check.
+     * A move is legal if the piece can make the move and it does not leave the King
+     * in check.
      */
     public static boolean hasLegalMoves(Board board, boolean isWhite) {
         int[] pieces = new int[board.activePieceCount];
