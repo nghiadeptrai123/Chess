@@ -797,8 +797,20 @@ public class ChessBoardUI extends JFrame {
     private void loadPieceImages() {
         String[] colors = { "White", "Black" };
         String[] types = { "King", "Queen", "Rook", "Bishop", "Knight", "Pawn" };
-        // Resolve the folder relative to where the program is launched from
-        File imgDir = new File("chess pieces");
+        // Resolve the folder relative to the JAR/executable location (works for both IDE and packaged exe)
+        File imgDir;
+        try {
+            File jarLocation = new File(ChessBoardUI.class.getProtectionDomain()
+                .getCodeSource().getLocation().toURI());
+            // If it's a JAR, go up one level to get the app folder; if it's a class dir, use it directly
+            File base = jarLocation.isFile() ? jarLocation.getParentFile() : jarLocation;
+            imgDir = new File(base, "chess pieces");
+            if (!imgDir.exists()) {
+                imgDir = new File("chess pieces"); // fallback to CWD (for IDE)
+            }
+        } catch (Exception e) {
+            imgDir = new File("chess pieces"); // fallback to CWD
+        }
         for (String color : colors) {
             for (String type : types) {
                 String key = color + " " + type;
